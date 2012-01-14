@@ -33,6 +33,39 @@ push_col(Table *table, unsigned row) {
         r->cells[r->n - 1].str = 0;
     }
 }
+clear_cell(Table *table, unsigned row, unsigned col) {
+    if (col < col_count(table, row)) {
+        Cell *cell = table->rows[row].cells + col;
+        if (cell->str) free(cell->str);
+        cell->len = 0;
+        cell->str = 0;
+    }
+}
+clear_row(Table *table, unsigned row) {
+    if (row < row_count(table)) {
+        unsigned n = col_count(table, row);
+        while (n--) clear_cell(table, row, n);
+    }
+}
+delete_cell(Table *table, unsigned row, unsigned col) {
+    if (col < col_count(table, row)) {
+        Cell *c = table->rows[row].cells + col;
+        clear_cell(table, row, col);
+        memmove(c, c + 1, (--table->rows[row].n - col) * sizeof *c);
+    }
+}
+delete_row(Table *table, unsigned row) {
+    if (row < row_count(table)) {
+        Row *r = table->rows + row;
+        clear_row(table, row);
+        memmove(r, r + 1, (--table->n - row) * sizeof *r);
+    }
+}
+delete_table(Table *table) {
+    unsigned n = row_count(table);
+    while (n) delete_row(table, --n);
+}
+
 Cell try_cell(Table *table, unsigned row, unsigned col) {
     return col < col_count(table, row)
         ? table->rows[row].cells[col]

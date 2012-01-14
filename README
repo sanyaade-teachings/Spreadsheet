@@ -1,0 +1,17 @@
+EDIT KEYS
+    Escape          Cancel edit
+    Enter           Commit edit and move down
+    Tab             Commit edit and move right
+    ^Tab            Insert tab
+    ^Enter          Insert line break
+MOVEMENT KEYS
+    F2              Edit
+    Enter           Down
+    Tab             Right
+    ^L, Shift+^L    Clear Line & Delete Line
+    ^N              New table
+    ^O              Open file
+    ^S              Save file
+    Home,^Home      First Cell of Row, Top Cell of Col
+    End,^End        Last Cell of Row, Bottom Cell of Col
+    Del, Shift Del  Clear Cell & Delete Cell

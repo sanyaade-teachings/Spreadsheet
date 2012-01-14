@@ -1,0 +1,11 @@
+Date,Task
+2012-01-14,Open Files
+2012-01-14,Save Files
+2012-01-14,Edit box fit to content
+2012-01-14,"^L, Shift+^L    Clear Line & Delete Line
+    ^N              New table
+    ^O              Open file
+    ^S              Save file
+    Home,^Home      First Cell of Row, Top Cell of Col
+    End,^End        Last Cell of Row, Bottom Cell of Col
+    Del, Shift Del  Clear Cell & Delete Cell"

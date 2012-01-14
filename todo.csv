@@ -1,0 +1,15 @@
+Priority,Type,Task
+9,Feature,Cut & Paste
+9,Feature,Insert columns & Rows
+9,Feature,Headers
+9,Feature,Resize Columns
+7,Feature,Resize Rows
+6,Feature,Edit status
+6,Feature,Fit cell to content
+4,Bug,Output crlf/lf as input
+4,Feature,Handle encodings
+8,Feature,Drag & Drop files
+8,Feature,Insert Date & Time
+9,Feature,Fill Down
+9,Feature,Fill Across
+9,Feature,Select

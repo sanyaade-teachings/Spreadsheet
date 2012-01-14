@@ -72,6 +72,6 @@ write_csv_row(FILE *f, Row row) {
 write_csv(FILE *f, Table table) {
     for ( ; table.n; table.n--) {
         write_csv_row(f, *table.rows++);
-        if (table.n != 1) fputs("\n", f);
+        if (table.n != 1) fputs("\r\n", f);
     }
 }
