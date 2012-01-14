@@ -16,7 +16,7 @@ char *spell_fixnum(char *buf, Fixnum x, int *len) {
     int n = sprintf(buf, "%s%lld.%0*u",
         (x < 0 && -FIXNUM < x)? "-": "",
         x/FIXNUM,
-        FRACTION, abs(x)%FIXNUM);
+        FRACTION, labs((long) x)%FIXNUM);
     if (len) *len = n;
     return buf;
 }

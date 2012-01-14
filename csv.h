@@ -2,7 +2,7 @@
 #define CELLLEN 65536
 
 Table *read_csv(Table *table, char *f, char *eof) {
-    unsigned row = 0UL - 1UL, col, len;    
+    unsigned row = 0UL - 1UL, col;    
     
 record:
     col = 0;

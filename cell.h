@@ -14,10 +14,10 @@ typedef struct {
 Cell    empty_cell = {0, ""};
 
 #define REALLOC(X,N) X=realloc(X, (N)*sizeof *X)
-row_count(Table *table) {
+unsigned row_count(Table *table) {
     return table->n;
 }
-col_count(Table *table, unsigned row) {
+unsigned col_count(Table *table, unsigned row) {
     return row < row_count(table)? table->rows[row].n: 0;
 }
 push_row(Table *table) {
