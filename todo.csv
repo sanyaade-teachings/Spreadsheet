@@ -11,3 +11,5 @@ Priority,Type,Task
 9,Feature,Fill Down
 9,Feature,Fill Across
 9,Feature,Select
+1,Feature,HTML Clipboard Format
+4,Feature,Insert Paste

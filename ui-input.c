@@ -98,6 +98,20 @@ wm_char(HWND hwnd, unsigned wparam) {
                 MessageBox(hwnd, L"Could not save the file", L"Error", MB_OK);
         break;
     
+    case 'C' - 'A' + 1:
+        copy_to_clipboard();
+        break;
+    
+    case 'X' - 'A' + 1:
+        copy_to_clipboard();
+        clear_cell(&TheTable, CurRow, CurCol);
+        redraw_rows(CurRow, CurRow);
+        break;
+    
+    case 'V' - 'A' + 1:
+        paste_clipboard();
+        break;
+    
     case VK_RETURN: move_cursor(IsShiftDown()? -1: 1, 0); break;
     case VK_TAB: move_cursor(0, IsShiftDown()? -1: 1); break;
     

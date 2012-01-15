@@ -15,3 +15,7 @@ Date,Task
 2012-01-14,Time & Date stamp
 2012-01-14,Drag & Drop Files
 2012-01-14,Leaving a cell that is being edited commits it
+2012-01-14 18:47:38,Added library pragmas for all libraries used
+2012-01-14 18:51:05,CSVs can be loaded to any row & column
+2012-01-14 19:09:48,Pasting from clipboard
+2012-01-14 19:34:33,Cut & Copy single cells

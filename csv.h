@@ -1,11 +1,13 @@
 #include <assert.h>
 #define CELLLEN 65536
 
-Table *read_csv(Table *table, char *f, char *eof) {
-    unsigned row = 0UL - 1UL, col;    
+Table *read_csv(Table *table, unsigned row, unsigned left, char *f, char *eof, unsigned *max_rowp, unsigned *max_colp) {
+    unsigned col = left, max_row, max_col = left;
     
+    row--;
 record:
-    col = 0;
+    max_col = max(col, max_col);
+    col = left;
     row++;
     
     while (f < eof)
@@ -41,6 +43,8 @@ record:
                 } else
                     f++;
         }
+    if (max_rowp) *max_rowp = row;
+    if (max_colp) *max_colp = max_col;
     return table;
 }
 static need_escape(unsigned char *text, unsigned len) {

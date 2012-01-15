@@ -8,10 +8,13 @@ MOVEMENT KEYS
     F2              Edit
     Enter,ShiftEnter Down, Up
     Tab, Shift Tab  Right, Left
+    ^C              Copy
     ^L, Shift+^L    Clear Line & Delete Line
     ^N              New table
     ^O              Open file
     ^S              Save file
+    ^V              Paste
+    ^X              Cut
     Home,^Home      First Cell of Row, Top Cell of Col
     End,^End        Last Cell of Row, Bottom Cell of Col
     Del, Shift Del  Clear Cell & Delete Cell
