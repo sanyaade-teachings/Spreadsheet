@@ -22,9 +22,6 @@
 #include "cell.h"
 #include "csv.h"
 
-unsigned    CurRow, CurCol;
-Table       TheTable;
-
 HWND        TheWindow;
 HWND        EditBox;
 
@@ -76,7 +73,7 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
     RegisterClass(&wc);
     TheWindow = CreateWindowEx(WS_EX_LAYERED | WS_EX_ACCEPTFILES,
         TEXT("Window"), TEXT(""),
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL,
         CW_USEDEFAULT,CW_USEDEFAULT,
         CW_USEDEFAULT,CW_USEDEFAULT,
         0, 0, GetModuleHandle(0), 0);

@@ -5,6 +5,8 @@ EDIT KEYS
     ^Tab            Insert tab
     ^Enter          Insert line break
 MOVEMENT KEYS
+    ←↑↓→            Move
+    ^←↑↓→           Scroll
     F2              Edit
     Enter,ShiftEnter Down, Up
     Tab, Shift Tab  Right, Left
@@ -17,7 +19,7 @@ MOVEMENT KEYS
     ^X              Cut
     Home,^Home      First Cell of Row, Top Cell of Col
     End,^End        Last Cell of Row, Bottom Cell of Col
-    Del, Shift Del  Clear Cell & Delete Cell
+    Del, Shift Del  Clear Cell & Delete Cell    
 MOUSE
     Click           Set Cursor
     Double-Click    Edit Cell

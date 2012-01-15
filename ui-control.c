@@ -1,13 +1,18 @@
+unsigned    CurRow, CurCol;
+Table       TheTable;
+
 is_editing();
 cancel_edit();
 end_edit() ;
 start_edit(int edit_existing);
+snap_to_cursor();
 
 jump_cursor(unsigned row, unsigned col) {
     end_edit();
     redraw_rows(CurRow, CurRow);              /* Clear Cursor */
     CurRow = row;
     CurCol = col;
+    snap_to_cursor();
     redraw_rows(CurRow, CurRow);               /* Draw Cursor */
 }
 
@@ -49,6 +54,7 @@ paste_clipboard() {
         GlobalUnlock(handle);
         CloseHandle(handle);
         CloseClipboard();
+        snap_to_cursor();
         redraw_rows(CurRow, max_row);
     }
 }
@@ -69,6 +75,7 @@ open_csv(TCHAR *fn) {
     read_csv(&TheTable, 0, 0, data, data + len, 0, 0);
     free(data);
     
+    jump_cursor(0, 0);
     redraw_rows(0, -1);
     return 1;
 }

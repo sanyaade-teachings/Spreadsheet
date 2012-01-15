@@ -19,3 +19,6 @@ Date,Task
 2012-01-14 18:51:05,CSVs can be loaded to any row & column
 2012-01-14 19:09:48,Pasting from clipboard
 2012-01-14 19:34:33,Cut & Copy single cells
+2012-01-14 21:02:13,Scrolling in both directions
+2012-01-14 21:23:20,Snap to cursor
+2012-01-14 21:31:07,Over-draw to show partials at edge of window

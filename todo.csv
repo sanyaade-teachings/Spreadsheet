@@ -1,15 +1,17 @@
 Priority,Type,Task
-9,Feature,Cut & Paste
-9,Feature,Insert columns & Rows
-9,Feature,Headers
-9,Feature,Resize Columns
-7,Feature,Resize Rows
-6,Feature,Edit status
-6,Feature,Fit cell to content
-4,Bug,Output crlf/lf as input
-4,Feature,Handle encodings
-9,Feature,Fill Down
-9,Feature,Fill Across
-9,Feature,Select
+8,Feature,Insert columns & Rows
+7,Feature,Headers
+8,Feature,Resize Columns
+5,Feature,Resize Rows
+5,Feature,Edit status
+3,Feature,Fit cell to content
+1,Bug,Output crlf/lf as input
+1,Feature,Handle encodings
+5,Feature,Fill Down
+5,Feature,Fill Across
+8,Feature,Select
 1,Feature,HTML Clipboard Format
 4,Feature,Insert Paste
+4,Optimization,Only redraw in the invalid region
+9,Bug,Extra field if quote is last in record
+8,Feature,Scrollbars

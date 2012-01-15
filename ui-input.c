@@ -42,7 +42,8 @@ start_edit(int edit_existing) {
     } else
         SetWindowText(EditBox, L"");
     
-    MoveWindow(EditBox, rt.left, rt.top, rt.right - rt.left, rt.bottom - rt.top, 0);
+    MoveWindow(EditBox, rt.left, rt.top,
+        rt.right - rt.left, rt.bottom - rt.top, 0);
     ShowWindow(EditBox, SW_NORMAL);
     SetFocus(EditBox);
 }
@@ -126,10 +127,22 @@ wm_char(HWND hwnd, unsigned wparam) {
 wm_keydown(HWND hwnd, unsigned wparam) {
     switch (wparam) {
     
-    case VK_UP: move_cursor(-1, 0); break;
-    case VK_DOWN: move_cursor(1, 0); break;
-    case VK_LEFT: move_cursor(0, -1); break;
-    case VK_RIGHT: move_cursor(0, 1); break;
+    case VK_UP:
+        if (IsCtrlDown()) scroll(-1, 0);
+        else move_cursor(-1, 0);
+        break;
+    case VK_DOWN:
+        if (IsCtrlDown()) scroll(1, 0);
+        else move_cursor(1, 0);
+        break;
+    case VK_LEFT:
+        if (IsCtrlDown()) scroll(0, -1);
+        else move_cursor(0, -1);
+        break;
+    case VK_RIGHT:
+        if (IsCtrlDown()) scroll(0, 1);
+        else move_cursor(0, 1);
+        break;
     
     case VK_F2: start_edit(1); break;
     
@@ -142,9 +155,9 @@ wm_keydown(HWND hwnd, unsigned wparam) {
         
     case VK_END:
         if (IsCtrlDown())
-            jump_cursor(row_count(&TheTable), CurCol);
+            jump_cursor(row_count(&TheTable) - 1, CurCol);
         else
-            jump_cursor(CurRow, col_count(&TheTable, CurRow));
+            jump_cursor(CurRow, col_count(&TheTable, CurRow) - 1);
         break;
     
     case VK_DELETE:
@@ -178,11 +191,11 @@ wm_keydown(HWND hwnd, unsigned wparam) {
 }
 
 wm_lbuttondown(HWND hwnd, unsigned x, unsigned y) {
-    jump_cursor(y / CellHeight, x / CellWidth);
+    jump_cursor(y / CellHeight + FirstRow, x / CellWidth + FirstCol);
 }
 
 wm_lbuttondblclk(HWND hwnd, unsigned x, unsigned y) {
-    jump_cursor(y / CellHeight, x / CellWidth);
+    jump_cursor(y / CellHeight + FirstRow, x / CellWidth + FirstCol);
     start_edit(1);
 }
 
