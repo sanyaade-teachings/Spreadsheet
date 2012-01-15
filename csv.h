@@ -1,6 +1,7 @@
 #include <assert.h>
 #define CELLLEN 65536
 
+#define IS_EOL 
 Table *read_csv(Table *table, unsigned row, unsigned left, char *f, char *eof, unsigned *max_rowp, unsigned *max_colp) {
     unsigned col = left, max_row, max_col = left;
     
@@ -21,10 +22,17 @@ record:
                         break;
                 } else
                     *p++ = *f;
+            
             assert(p < cap);
+            set_cell(table, row, col++, buf, p - buf);
+            
             if (*f == '"') f++;
             if (*f == ',') f++;
-            set_cell(table, row, col++, buf, p - buf);
+            if (*f == '\r' || *f == '\n') {
+                if (*f == '\r') f++;
+                if (*f == '\n') f++;
+                goto record;
+            }
         } else {
             char *start = f;
             for (;;)

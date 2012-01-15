@@ -13,5 +13,4 @@ Priority,Type,Task
 1,Feature,HTML Clipboard Format
 4,Feature,Insert Paste
 4,Optimization,Only redraw in the invalid region
-9,Bug,Extra field if quote is last in record
 8,Feature,Scrollbars

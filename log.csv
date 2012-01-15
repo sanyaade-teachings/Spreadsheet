@@ -22,3 +22,4 @@ Date,Task
 2012-01-14 21:02:13,Scrolling in both directions
 2012-01-14 21:23:20,Snap to cursor
 2012-01-14 21:31:07,Over-draw to show partials at edge of window
+2012-01-14 21:49:01,Fixed CSV quote reading. Lines may properly end with quotes.
