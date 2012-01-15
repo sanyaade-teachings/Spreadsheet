@@ -47,9 +47,12 @@ WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     case WM_SIZE: wm_size(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
     /* Focus returning from another app should continue edit */
     case WM_SETFOCUS:  if (is_editing()) SetFocus(EditBox); return 0;
-    case WM_CHAR: wm_char(hwnd, wparam); return 0;
-    case WM_KEYDOWN: wm_keydown(hwnd, wparam); return 0;
+    case WM_CHAR: if (wm_char(hwnd, wparam)) return 0; break;
+    case WM_KEYDOWN: if (wm_keydown(hwnd, wparam)) return 0; break;
+    case WM_LBUTTONDOWN: wm_lbuttondown(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
+    case WM_LBUTTONDBLCLK: wm_lbuttondblclk(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
     case WM_ERASEBKGND: return 1;
+    case WM_DROPFILES: wm_dropfiles(hwnd, (HDROP)wparam); return 0;
     case WM_CREATE: setup_resources(hwnd); return 0;
     case WM_DESTROY: PostQuitMessage(0); return 0;
     }
@@ -65,7 +68,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
         LoadCursor(0, IDC_ARROW), (HBRUSH)(COLOR_WINDOW+1), 0,
         TEXT("Window")};
     RegisterClass(&wc);
-    TheWindow = CreateWindowEx(WS_EX_LAYERED, TEXT("Window"), TEXT(""),
+    TheWindow = CreateWindowEx(WS_EX_LAYERED | WS_EX_ACCEPTFILES,
+        TEXT("Window"), TEXT(""),
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT,CW_USEDEFAULT,
         CW_USEDEFAULT,CW_USEDEFAULT,

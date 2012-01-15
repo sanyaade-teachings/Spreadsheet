@@ -88,12 +88,8 @@ wm_char(HWND hwnd, unsigned wparam) {
         break;
         
     case 'O' - 'A' + 1:
-        if (GetOpenFileName(&open_dlg)) {
-            delete_table(&TheTable);
-            if (!open_csv(TheFilename))
-                MessageBox(hwnd, L"Could not open the file", L"Error", MB_OK);
-            InvalidateRect(hwnd, 0, 0);
-        }
+        if (GetOpenFileName(&open_dlg))
+            clear_and_open(TheFilename);
         break;
     
     case 'S' - 'A' + 1:
@@ -102,14 +98,15 @@ wm_char(HWND hwnd, unsigned wparam) {
                 MessageBox(hwnd, L"Could not save the file", L"Error", MB_OK);
         break;
     
-    case VK_RETURN: move_cursor(1, 0); break;
-    case VK_TAB: move_cursor(0, 1); break;
+    case VK_RETURN: move_cursor(IsShiftDown()? -1: 1, 0); break;
+    case VK_TAB: move_cursor(0, IsShiftDown()? -1: 1); break;
     
     default:
         start_edit(0);
         SendMessage(EditBox, WM_CHAR, wparam, 0); /* Don't drop the char */
         break;
     }
+    return 1;
 }
 
 wm_keydown(HWND hwnd, unsigned wparam) {
@@ -143,7 +140,41 @@ wm_keydown(HWND hwnd, unsigned wparam) {
             clear_cell(&TheTable, CurRow, CurCol);
         redraw_rows(CurRow, CurRow);
         break;
+    
+    case VK_OEM_1: /* Semicolon */
+        if (IsCtrlDown()) {
+            char timestr[32];
+            SYSTEMTIME time;
+            GetLocalTime(&time);
+            if (IsShiftDown())
+                sprintf(timestr, "%04d-%02d-%02d %02d:%02d:%02d",
+                    time.wYear, time.wMonth, time.wDay,
+                    time.wHour, time.wMinute, time.wSecond);
+            else
+                sprintf(timestr, "%04d-%02d-%02d",
+                    time.wYear, time.wMonth, time.wDay);
+            set_cell(&TheTable, CurRow, CurCol, timestr, strlen(timestr));
+            redraw_rows(CurRow, CurRow);
+            break;
+        }
+        return 0;
+    
     }
+    return 1;
+}
+
+wm_lbuttondown(HWND hwnd, unsigned x, unsigned y) {
+    jump_cursor(y / CellHeight, x / CellWidth);
+}
+
+wm_lbuttondblclk(HWND hwnd, unsigned x, unsigned y) {
+    jump_cursor(y / CellHeight, x / CellWidth);
+    start_edit(1);
+}
+
+wm_dropfiles(HWND hwnd, HDROP drop) {
+    DragQueryFile(drop, 0, TheFilename, MAX_PATH);
+    clear_and_open(TheFilename);
 }
 
 init_ui_input(HWND hwnd) {

@@ -8,4 +8,10 @@ Date,Task
     ^S              Save file
     Home,^Home      First Cell of Row, Top Cell of Col
     End,^End        Last Cell of Row, Bottom Cell of Col
-    Del, Shift Del  Clear Cell & Delete Cell"
+    Del, Shift Del  Clear Cell & Delete Cell",
+2012-01-14,Cleaned Structure
+2012-01-14,"Shift-Tab, Shift-Enter",
+2012-01-14,Clicking on Cell
+2012-01-14,Time & Date stamp
+2012-01-14,Drag & Drop Files
+2012-01-14,Leaving a cell that is being edited commits it

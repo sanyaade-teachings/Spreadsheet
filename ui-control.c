@@ -1,4 +1,10 @@
+is_editing();
+cancel_edit();
+end_edit() ;
+start_edit(int edit_existing);
+
 jump_cursor(unsigned row, unsigned col) {
+    end_edit();
     redraw_rows(CurRow, CurRow);              /* Clear Cursor */
     CurRow = row;
     CurCol = col;
@@ -25,6 +31,13 @@ open_csv(TCHAR *fn) {
     read_csv(&TheTable, data, data + len);
     free(data);
     return 1;
+}
+
+clear_and_open(TCHAR *fn) {
+    delete_table(&TheTable);
+    if (!open_csv(TheFilename))
+        MessageBox(TheWindow, L"Could not open the file", L"Error", MB_OK);
+    redraw_rows(0, -1);
 }
 
 save_csv(TCHAR *fn) {

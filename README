@@ -6,8 +6,8 @@ EDIT KEYS
     ^Enter          Insert line break
 MOVEMENT KEYS
     F2              Edit
-    Enter           Down
-    Tab             Right
+    Enter,ShiftEnter Down, Up
+    Tab, Shift Tab  Right, Left
     ^L, Shift+^L    Clear Line & Delete Line
     ^N              New table
     ^O              Open file
@@ -15,3 +15,6 @@ MOVEMENT KEYS
     Home,^Home      First Cell of Row, Top Cell of Col
     End,^End        Last Cell of Row, Bottom Cell of Col
     Del, Shift Del  Clear Cell & Delete Cell
+MOUSE
+    Click           Set Cursor
+    Double-Click    Edit Cell

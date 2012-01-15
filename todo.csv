@@ -8,8 +8,6 @@ Priority,Type,Task
 6,Feature,Fit cell to content
 4,Bug,Output crlf/lf as input
 4,Feature,Handle encodings
-8,Feature,Drag & Drop files
-8,Feature,Insert Date & Time
 9,Feature,Fill Down
 9,Feature,Fill Across
 9,Feature,Select
