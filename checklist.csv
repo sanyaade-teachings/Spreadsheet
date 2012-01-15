@@ -1,2 +1,5 @@
 Redrawing correctly?
 Snap-to-cursor
+Column & Row are in the correct order for call
+Not mixing up column & row in comparison
+Is interval open or closed?

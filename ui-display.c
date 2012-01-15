@@ -72,7 +72,7 @@ redraw_rows(unsigned lo, unsigned hi) {
 
 paint_table(HDC dc, Table *table) {
     unsigned row, col;
-    RECT    rt;
+    RECT    rt, rt2;
     
     SelectObject(dc, GetStockObject(DC_BRUSH));
     SelectObject(dc, GetStockObject(DC_PEN));
@@ -85,14 +85,21 @@ paint_table(HDC dc, Table *table) {
     for (row = 0; row <= VisibleRows; row += 2)
         Rectangle(dc, 0, row*CellHeight, WindowWidth, (row+1)*CellHeight);
     
+    /* Draw Grid */
     SelectObject(dc, GetStockObject(DC_PEN));
     for (col = 0; col <= VisibleCols; col++)
         DrawLine(dc, col*CellWidth, 0, col*CellWidth, WindowHeight);
     
-    /* Draw Cursor */
-    rt = get_cell_rect(CurRow, CurCol);
+    /* Draw Cursor & selection rectangle */
     SetDCBrushColor(dc, color_cur_bg);
     SetDCPenColor(dc, color_cur_grid);
+    if (is_selecting) {
+        rt = get_cell_rect(CurRow, CurCol);
+        rt2 = get_cell_rect(AnchorRow, AnchorCol);
+        UnionRect(&rt, &rt, &rt2);
+        Rectangle(dc, rt.left, rt.top, rt.right, rt.bottom);
+    }
+    rt = get_cell_rect(CurRow, CurCol);
     Rectangle(dc, rt.left, rt.top, rt.right, rt.bottom);
     
     /* Draw cells; Draw one more than fully visible to get partial cells */

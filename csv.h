@@ -87,3 +87,13 @@ write_csv(FILE *f, Table table) {
         if (table.n != 1) fputs("\r\n", f);
     }
 }
+write_csv_cells(FILE *f, Table *table, unsigned row_lo, unsigned row_hi, unsigned col_lo, unsigned col_hi) {
+    unsigned r, c;
+    for (r = row_lo; r < row_hi; r++) {
+        for (c = col_lo; c < col_hi; c++) {
+            write_csv_cell(f, try_cell(table, r, c));
+            if (c + 1 < col_hi) putc(',', f);
+        }
+        if (r + 1 < row_hi) fputs("\r\n", f);
+    }
+}

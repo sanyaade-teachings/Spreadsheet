@@ -90,4 +90,4 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
     }
     return (int)msg.wParam;
 }
-main() { return WinMain(0,0,0,0); }
+//main() { return WinMain(0,0,0,0); }

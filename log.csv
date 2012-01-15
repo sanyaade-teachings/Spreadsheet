@@ -24,3 +24,7 @@ Date,Task
 2012-01-14 21:31:07,Over-draw to show partials at edge of window
 2012-01-14 21:49:01,Fixed CSV quote reading. Lines may properly end with quotes.
 2012-01-14 22:37:40,Insert row & insert cell
+2012-01-14 23:40:51,Selection w/ keyboard & mouse
+2012-01-15 00:02:31,Deleting selection
+2012-01-15 00:13:17,Deleting selected lines
+2012-01-15 00:42:29,Cut & Copy blocks

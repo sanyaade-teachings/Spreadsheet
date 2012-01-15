@@ -55,7 +55,6 @@ EditProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_P
         case VK_RETURN:
             if (IsCtrlDown()) break;
             end_edit();
-            move_cursor(1, 0);
             return 0;
         case VK_TAB:
             if (IsCtrlDown()) break;
@@ -72,53 +71,53 @@ EditProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_P
 wm_char(HWND hwnd, unsigned wparam) {
     switch (wparam) {
     
-    case 'L' - 'A' + 1:
-        if (IsShiftDown()) {
-            delete_row(&TheTable, CurRow);
-            redraw_rows(CurRow, -1);
-        } else {
-            clear_row(&TheTable, CurRow);
-            redraw_rows(CurRow, CurRow);
-        }
+    case 'L' - 'A' + 1:                         /* Delete Row */
+        delete_selected_rows(IsShiftDown());
         break;
         
-    case 'N' - 'A' + 1:
-        TheFilename[0] = 0;
-        delete_table(&TheTable);
-        redraw_rows(0, -1);
+    case 'N' - 'A' + 1:                           /* New File */
+        clear_file();
         break;
         
-    case 'O' - 'A' + 1:
+    case 'O' - 'A' + 1:                          /* Open file */
         if (GetOpenFileName(&open_dlg))
             clear_and_open(TheFilename);
         break;
     
-    case 'S' - 'A' + 1:
+    case 'S' - 'A' + 1:                          /* Save File */
         if (TheFilename[0] || GetSaveFileName(&open_dlg))
             if (!save_csv(TheFilename))
                 MessageBox(hwnd, L"Could not save the file", L"Error", MB_OK);
         break;
     
-    case 'C' - 'A' + 1:
+    case 'C' - 'A' + 1:                               /* Copy */
         copy_to_clipboard();
         break;
     
-    case 'X' - 'A' + 1:
+    case 'X' - 'A' + 1:                                /* Cut */
         copy_to_clipboard();
-        clear_cell(&TheTable, CurRow, CurCol);
-        redraw_rows(CurRow, CurRow);
+        delete_selected_cols(IsShiftDown());
         break;
     
-    case 'V' - 'A' + 1:
+    case 'V' - 'A' + 1:                              /* Paste */
+        clear_anchor();
         paste_clipboard();
         break;
         
-    case VK_RETURN: move_cursor(IsShiftDown()? -1: 1, 0); break;
-    case VK_TAB: move_cursor(0, IsShiftDown()? -1: 1); break;
+    case VK_RETURN:                                  /* Enter */
+        clear_anchor();
+        move_cursor(IsShiftDown()? -1: 1, 0);
+        break;
+        
+    case VK_TAB:                                       /* Tab */
+        clear_anchor();
+        move_cursor(0, IsShiftDown()? -1: 1);
+        break;
     
-    default:
+    default:                                /* Auto-edit cell */
+        /* Don't drop the char; forward it to the editor */
         start_edit(0);
-        SendMessage(EditBox, WM_CHAR, wparam, 0); /* Don't drop the char */
+        SendMessage(EditBox, WM_CHAR, wparam, 0); 
         break;
     }
     return 1;
@@ -129,24 +128,37 @@ wm_keydown(HWND hwnd, unsigned wparam) {
     
     case VK_UP:
         if (IsCtrlDown()) scroll(-1, 0);
-        else move_cursor(-1, 0);
+        else {
+            if (IsShiftDown()) set_anchor(); else clear_anchor();
+            move_cursor(-1, 0);
+        }
         break;
     case VK_DOWN:
         if (IsCtrlDown()) scroll(1, 0);
-        else move_cursor(1, 0);
+        else  {
+            if (IsShiftDown()) set_anchor(); else clear_anchor();
+            move_cursor(1, 0);
+        }
         break;
     case VK_LEFT:
         if (IsCtrlDown()) scroll(0, -1);
-        else move_cursor(0, -1);
+        else {
+            if (IsShiftDown()) set_anchor(); else clear_anchor();
+            move_cursor(0, -1);
+        }
         break;
     case VK_RIGHT:
         if (IsCtrlDown()) scroll(0, 1);
-        else move_cursor(0, 1);
+        else {
+            if (IsShiftDown()) set_anchor(); else clear_anchor();
+            move_cursor(0, 1);
+        }
         break;
     
     case VK_F2: start_edit(1); break;
     
     case VK_HOME:
+        if (IsShiftDown()) set_anchor();
         if (IsCtrlDown())
             jump_cursor(0, CurCol);
         else
@@ -154,6 +166,7 @@ wm_keydown(HWND hwnd, unsigned wparam) {
         break;
         
     case VK_END:
+        if (IsShiftDown()) set_anchor(); else clear_anchor();
         if (IsCtrlDown())
             jump_cursor(row_count(&TheTable) - 1, CurCol);
         else
@@ -161,15 +174,11 @@ wm_keydown(HWND hwnd, unsigned wparam) {
         break;
     
     case VK_DELETE:
-        if (IsShiftDown())
-            delete_cell(&TheTable, CurRow, CurCol);
-        else
-            clear_cell(&TheTable, CurRow, CurCol);
-        redraw_rows(CurRow, CurRow);
+        delete_selected_cols(IsShiftDown());
         break;
     
     case VK_OEM_1: /* Semicolon */
-        if (IsCtrlDown()) {
+        if (IsCtrlDown()) {               /* Insert Date/Time */
             char timestr[32];
             SYSTEMTIME time;
             GetLocalTime(&time);
@@ -188,11 +197,11 @@ wm_keydown(HWND hwnd, unsigned wparam) {
 
     case VK_OEM_PERIOD: /* . */
         if (IsCtrlDown())
-            if (IsShiftDown()) {
+            if (IsShiftDown()) {               /* Insert Cell */
                 insert_cell(&TheTable, CurRow, CurCol);
                 redraw_rows(CurRow, CurRow);
                 return 0;
-            } else {
+            } else {                            /* Insert Row */
                 insert_row(&TheTable, CurRow);
                 redraw_rows(CurRow, -1);
                 return 0;
@@ -203,10 +212,12 @@ wm_keydown(HWND hwnd, unsigned wparam) {
 }
 
 wm_lbuttondown(HWND hwnd, unsigned x, unsigned y) {
+    if (IsShiftDown()) set_anchor(); else clear_anchor();
     jump_cursor(y / CellHeight + FirstRow, x / CellWidth + FirstCol);
 }
 
 wm_lbuttondblclk(HWND hwnd, unsigned x, unsigned y) {
+    if (IsShiftDown()) set_anchor(); else clear_anchor();
     jump_cursor(y / CellHeight + FirstRow, x / CellWidth + FirstCol);
     start_edit(1);
 }

@@ -64,6 +64,17 @@ clear_row(Table *table, unsigned row) {
         while (n--) clear_cell(table, row, n);
     }
 }
+clear_rows(Table *table, unsigned row_lo, unsigned row_hi) {
+    unsigned r;
+    for (r = row_lo; r < row_hi; r++)
+        clear_row(table, r);
+}
+clear_cells(Table *table, unsigned row_lo, unsigned row_hi, unsigned col_lo, unsigned col_hi) {
+    unsigned r, c;
+    for (r = row_lo; r < row_hi; r++)
+        for (c = col_lo; c < col_hi; c++)
+            clear_cell(table, r, c);
+}
 delete_cell(Table *table, unsigned row, unsigned col) {
     if (col < col_count(table, row)) {
         Cell *c = table->rows[row].cells + col;
@@ -78,9 +89,20 @@ delete_row(Table *table, unsigned row) {
         memmove(r, r + 1, (--table->n - row) * sizeof *r);
     }
 }
+delete_rows(Table *table, unsigned row_lo, unsigned row_hi) {
+    unsigned r;
+    for (r = row_lo; r < row_hi; r++)
+        delete_row(table, row_lo);
+}
 delete_table(Table *table) {
     unsigned n = row_count(table);
     while (n) delete_row(table, --n);
+}
+delete_cells(Table *table, unsigned row_lo, unsigned row_hi, unsigned col_lo, unsigned col_hi) {
+    unsigned r, c;
+    for (r = row_lo; r < row_hi; r++)
+        for (c = col_lo; c < col_hi; c++)
+            delete_cell(table, r, col_lo);
 }
 
 Cell try_cell(Table *table, unsigned row, unsigned col) {

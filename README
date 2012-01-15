@@ -1,6 +1,6 @@
 EDIT KEYS
     Escape          Cancel edit
-    Enter           Commit edit and move down
+    Enter           Commit edit
     Tab             Commit edit and move right
     ^Tab            Insert tab
     ^Enter          Insert line break
@@ -12,15 +12,15 @@ MOVEMENT KEYS
     Enter,ShiftEnter Down, Up
     Tab, Shift Tab  Right, Left
     ^C              Copy
-    ^L, Shift+^L    Clear Line & Delete Line
+    ^L, Shift+^L    Clear Line(s) & Delete Line(s)
     ^N              New table
     ^O              Open file
     ^S              Save file
     ^V              Paste
-    ^X              Cut
+    ^X,Shift+^X     Cut (clear cells), Cut (delete cells)
     Home,^Home      First Cell of Row, Top Cell of Col
     End,^End        Last Cell of Row, Bottom Cell of Col
-    Del, Shift Del  Clear Cell & Delete Cell    
+    Del, Shift Del  Clear Cell(s) & Delete Cell(s)
 MOUSE
     Click           Set Cursor
     Double-Click    Edit Cell

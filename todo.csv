@@ -12,4 +12,8 @@ Priority,Type,Task
 1,Feature,HTML Clipboard Format
 4,Feature,Insert Paste
 4,Optimization,Only redraw in the invalid region
-8,Feature,Scrollbars
+6,Feature,Scrollbars
+9,Administrative,Gather all editing actions into one place
+9,Administrative,Stop using TheFilename as a temporary file name
+1,Feature,Warn if closing without saving
+9,Administrative,Merge delete row & delete rows
