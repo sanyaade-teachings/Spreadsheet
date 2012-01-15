@@ -7,6 +7,7 @@ EDIT KEYS
 MOVEMENT KEYS
     ←↑↓→            Move
     ^←↑↓→           Scroll
+    ^., Shift+^>    Insert Row, Insert Col
     F2              Edit
     Enter,ShiftEnter Down, Up
     Tab, Shift Tab  Right, Left

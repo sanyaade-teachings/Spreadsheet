@@ -8,9 +8,9 @@ Date,Task
     ^S              Save file
     Home,^Home      First Cell of Row, Top Cell of Col
     End,^End        Last Cell of Row, Bottom Cell of Col
-    Del, Shift Del  Clear Cell & Delete Cell",
+    Del, Shift Del  Clear Cell & Delete Cell"
 2012-01-14,Cleaned Structure
-2012-01-14,"Shift-Tab, Shift-Enter",
+2012-01-14,"Shift-Tab, Shift-Enter"
 2012-01-14,Clicking on Cell
 2012-01-14,Time & Date stamp
 2012-01-14,Drag & Drop Files
@@ -23,3 +23,4 @@ Date,Task
 2012-01-14 21:23:20,Snap to cursor
 2012-01-14 21:31:07,Over-draw to show partials at edge of window
 2012-01-14 21:49:01,Fixed CSV quote reading. Lines may properly end with quotes.
+2012-01-14 22:37:40,Insert row & insert cell

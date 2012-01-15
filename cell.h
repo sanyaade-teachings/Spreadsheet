@@ -13,7 +13,7 @@ typedef struct {
 
 Cell    empty_cell = {0, ""};
 
-#define REALLOC(X,N) X=realloc(X, (N)*sizeof *X)
+#define REALLOC(X,N) (X=realloc(X, (N)*sizeof *X))
 unsigned row_count(Table *table) {
     return table->n;
 }
@@ -31,6 +31,23 @@ push_col(Table *table, unsigned row) {
         REALLOC(r->cells, ++r->n);
         r->cells[r->n - 1].len = 0;
         r->cells[r->n - 1].str = 0;
+    }
+}
+insert_row(Table *table, unsigned row) {
+    if (row <= row_count(table)) {
+        Row *r = REALLOC(table->rows, ++table->n) + row;
+        memmove(r + 1, r, (row_count(table) - row - 1) * sizeof *r);
+        r->n = 0;
+        r->cells = 0;
+    }
+}
+insert_cell(Table *table, unsigned row, unsigned col) {
+    if (row <= row_count(table) && col <= col_count(table, row)) {
+        Row *r = table->rows + row;
+        Cell *c = REALLOC(r->cells, ++r->n) + col;
+        memmove(c + 1, c, (col_count(table, row) - col - 1) * sizeof *c);
+        c->len = 0;
+        c->str = 0;
     }
 }
 clear_cell(Table *table, unsigned row, unsigned col) {

@@ -112,7 +112,7 @@ wm_char(HWND hwnd, unsigned wparam) {
     case 'V' - 'A' + 1:
         paste_clipboard();
         break;
-    
+        
     case VK_RETURN: move_cursor(IsShiftDown()? -1: 1, 0); break;
     case VK_TAB: move_cursor(0, IsShiftDown()? -1: 1); break;
     
@@ -185,7 +185,19 @@ wm_keydown(HWND hwnd, unsigned wparam) {
             break;
         }
         return 0;
-    
+
+    case VK_OEM_PERIOD: /* . */
+        if (IsCtrlDown())
+            if (IsShiftDown()) {
+                insert_cell(&TheTable, CurRow, CurCol);
+                redraw_rows(CurRow, CurRow);
+                return 0;
+            } else {
+                insert_row(&TheTable, CurRow);
+                redraw_rows(CurRow, -1);
+                return 0;
+            }
+        break;
     }
     return 1;
 }
