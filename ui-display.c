@@ -17,7 +17,7 @@ HDC         WindowBuffer;
 unsigned    ColXs[65536];
 
 unsigned get_cell_x(unsigned col) {
-    return ColXs[col];
+    return ColXs[col] - ColXs[FirstCol];
 }
 unsigned get_cell_y(unsigned row) {
     return (row - FirstRow) * CellHeight;
