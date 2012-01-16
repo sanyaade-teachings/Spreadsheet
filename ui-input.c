@@ -15,10 +15,22 @@ HCURSOR     cursor_resize_col;
 HCURSOR     cursor_arrow;
 HCURSOR     cursor_scrolling;
 
-OPENFILENAME    open_dlg = {
+HWND        dlg;
+
+unsigned    WM_FIND;
+FINDREPLACEA find_replace_dlg = {
+			sizeof find_replace_dlg, 0, 0,
+			FR_DOWN|FR_DIALOGTERM
+			|FR_HIDEMATCHCASE|FR_HIDEWHOLEWORD,
+			TheFindText, 0,
+            sizeof TheFindText / sizeof *TheFindText, 0, 0, 0, 0 };
+
+OPENFILENAME open_dlg = {
     sizeof open_dlg, 0, 0,
-    L"Comma Seperated Values (*.csv)\0*.csv\0"
-        L"Text File (*.txt)\0*.txt\0",
+    L"All Spreadsheets (*.csv;*.txt)\0*.csv;*.txt\0"
+        L"Comma Seperated Values (*.csv)\0*.csv\0"
+        L"Text File (*.txt)\0*.txt\0"
+        L"All Files (*.*)\0*.*\0",
     0, 0, 0, TheFilename, MAX_PATH, 0, 0, 0, 0,
     OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT, };
 
@@ -104,6 +116,13 @@ EditProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_P
 wm_char(HWND hwnd, unsigned wparam) {
 
     switch (wparam) {
+    
+    case 'F' - 'A' + 1:
+        if (!dlg) {
+            find_replace_dlg.hwndOwner = hwnd;
+            dlg = FindTextA(&find_replace_dlg);
+        }
+        break;
     
     case 'L' - 'A' + 1:                         /* Delete Row */
         if (IsShiftDown()) command(CmdDeleteRow);
@@ -199,6 +218,10 @@ wm_keydown(HWND hwnd, unsigned wparam) {
         command(CmdEditCell);
         break;
     
+    case VK_F3:
+        command(IsCtrlDown()? CmdFindColumn: CmdFindRow);
+        break;
+    
     case VK_HOME:
         command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
         command(IsCtrlDown()? CmdHomeCol: CmdHomeRow);    
@@ -230,6 +253,12 @@ wm_keydown(HWND hwnd, unsigned wparam) {
     return 1;
 }
 
+wm_find(HWND hwnd, FINDREPLACE *find) {
+    if (find->Flags & FR_FINDNEXT)
+        command(CmdFindRow);
+    else if (find->Flags & FR_DIALOGTERM)
+        dlg = 0;
+}
 
 void CALLBACK ScrollTimerProc(HWND hwnd, UINT msg, UINT_PTR id, DWORD time) {
     DWORD pos = GetMessagePos();
@@ -350,6 +379,8 @@ init_ui_input(HWND hwnd) {
     cursor_arrow = LoadCursor(0, IDC_ARROW);
     cursor_scrolling = LoadCursor(0, IDC_SIZEALL);
     open_dlg.hwndOwner = hwnd;
+    
+    WM_FIND = RegisterWindowMessage(FINDMSGSTRING);
     
     EditBox = CreateWindowEx(0, TEXT("EDIT"), TEXT(""),
         WS_CHILD | ES_AUTOHSCROLL | ES_AUTOVSCROLL

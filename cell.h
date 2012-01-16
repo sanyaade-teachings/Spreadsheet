@@ -20,6 +20,9 @@ unsigned row_count(Table *table) {
 unsigned col_count(Table *table, unsigned row) {
     return row < row_count(table)? table->rows[row].n: 0;
 }
+unsigned max_col_count(Table *table) {
+    return 100;
+}
 insert_rows(Table *table, unsigned row, unsigned n) {
     if (row <= row_count(table)) {
         Row *r = REALLOC(table->rows, (table->n += n)) + row;

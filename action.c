@@ -47,6 +47,9 @@ enum {
     CmdInsertCell,
     CmdInsertRow,
     
+    CmdFindColumn,
+    CmdFindRow,
+    
 };
 
 scroll(int row, int col);
@@ -65,6 +68,59 @@ insert_datetime(int include_time) {
             time.wYear, time.wMonth, time.wDay);
     set_cell(&TheTable, CurRow, CurCol, timestr, strlen(timestr));
     redraw_rows(CurRow, CurRow);
+}
+
+cell_has_text(Table *table, unsigned row, unsigned col, char *text) {
+    Cell cell = try_cell(table, row, col);
+    return !!strstr(cell.str, text);
+}
+
+find_cell_text_col(Table *table, unsigned row, unsigned col, char *text) {
+    unsigned r,c;
+    
+    /* Find in current column after current row */
+    for (c = col, r = row + 1; r < row_count(table); r++)
+        if (cell_has_text(table, r, c, text)) goto found;
+    
+    /* Find in columns after the current */
+    for (c = col + 1; c < max_col_count(table); c++)
+        for (r = 0; r < row_count(table); r++)
+            if (cell_has_text(table, r, c, text)) goto found;
+    
+    /* Wrap around up to columns before current */
+    for (c = 0; c <= col; c++)
+        for (r = 0; r < row_count(table); r++)
+            if (cell_has_text(table, r, c, text)) goto found;
+    
+    return 0;
+    
+found:
+    jump_cursor(r, c);
+    return 1;
+}
+
+find_cell_text_row(Table *table, unsigned row, unsigned col, char *text) {
+    unsigned r,c;
+    
+    /* Find in current row after current column */
+    for (r = row, c = col + 1; c < col_count(table, r); c++)
+        if (cell_has_text(table, r, c, text)) goto found;
+    
+    /* Find in rows after current */
+    for (r = row + 1; r < row_count(table); r++)
+        for (c = 0; c < col_count(table, r); c++)
+            if (cell_has_text(table, r, c, text)) goto found;
+    
+    /* Wrap around and find in rows before current */
+    for (r = 0; r < row; r++)
+        for (c = 0; c < col_count(table, r); c++)
+            if (cell_has_text(table, r, c, text)) goto found;
+    
+    return 0;
+    
+found:
+    jump_cursor(r, c);
+    return 1;
 }
 
 command(int cmd) {
@@ -131,6 +187,15 @@ command(int cmd) {
         insert_rows(&TheTable, CurRow, 1);
         redraw_rows(CurRow, -1);
         break;
+    
+    case CmdFindColumn:
+        find_cell_text_col(&TheTable, CurRow, CurCol, TheFindText);
+        break;
+        
+    case CmdFindRow:
+        find_cell_text_row(&TheTable, CurRow, CurCol, TheFindText);
+        break;
+    
     }
 
 }

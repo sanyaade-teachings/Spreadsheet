@@ -26,6 +26,7 @@ HWND        TheWindow;
 HWND        EditBox;
 
 TCHAR       TheFilename[MAX_PATH];
+char        TheFindText[MAX_PATH];
 
 #define MAX_ROWS_FOR_FIT 500
 #define MIN_FIT_WIDTH 20
@@ -76,6 +77,7 @@ WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     case WM_CREATE: setup_resources(hwnd); return 0;
     case WM_DESTROY: PostQuitMessage(0); return 0;
     }
+    if (msg == WM_FIND) { wm_find(hwnd, (FINDREPLACE*)lparam); return 0; }
     return DefWindowProc(hwnd,msg,wparam,lparam);
 }
 
@@ -102,6 +104,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
     }
     
     while (GetMessage(&msg,0,0,0)) {
+        if (dlg && IsDialogMessage(dlg, &msg))
+			continue;
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
