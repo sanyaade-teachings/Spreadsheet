@@ -6,6 +6,8 @@ unsigned    AnchorRow, AnchorCol;
 #define     SelStartCol min(CurCol, AnchorCol)
 #define     SelEndRow (max(CurRow, AnchorRow) + 1)
 #define     SelEndCol (max(CurCol, AnchorCol) + 1)
+#define     SelRows     (SelEndRow - SelStartRow)
+#define     SelCols     (SelEndCol - SelStartCol)
 BOOL        is_selecting;
 
 is_editing();
@@ -14,7 +16,7 @@ end_edit() ;
 start_edit(int edit_existing);
 snap_to_cursor();
 
-set_anchor() {
+set_anchor() {                        /* Set Selection Anchor */
     if (!is_selecting) {
         AnchorRow = CurRow;
         AnchorCol = CurCol;
@@ -22,7 +24,7 @@ set_anchor() {
     }
 }
 
-clear_anchor() {
+clear_anchor() {                    /* Clear Selection Anchor */
     if (is_selecting) {
         is_selecting = 0;
         redraw_rows(0, -1);
@@ -41,7 +43,7 @@ jump_cursor(unsigned row, unsigned col) {
         if (CurCol != ocol || 1 < abs(orow - CurRow)) {
             /* Moving up or down one only changes one of two rows */
             /* Any left or right move changes the width of every row */
-            redraw_rows(min(orow, SelStartRow-1), max(orow, SelEndRow-1));
+            redraw_rows(min(orow, SelStartRow), max(orow, SelEndRow+1));
         }
     
     /* Clear old cursor and draw new one */
@@ -97,43 +99,47 @@ paste_clipboard() {
     }
 }
 
-delete_selected_cols(BOOL is_deleting) {
+clear_selected_cells() {
+    unsigned r;
     if (is_selecting) {
-        if (is_deleting)
-            delete_cells(&TheTable,
-                SelStartRow, SelEndRow,
-                SelStartCol, SelEndCol);
-        else
-            clear_cells(&TheTable,
-                SelStartRow, SelEndRow,
-                SelStartCol, SelEndCol);
+        for (r = SelStartRow; r < SelEndRow; r++)
+            clear_cells(&TheTable, r, SelStartCol, SelCols);
         redraw_rows(SelStartRow, SelEndRow - 1);
     } else {
-        if (is_deleting)
-            delete_cell(&TheTable, CurRow, CurCol);
-        else
-            clear_cell(&TheTable, CurRow, CurCol);
+        clear_cells(&TheTable, CurRow, CurCol, 1);
         redraw_rows(CurRow, CurRow);
     }
 }
 
-delete_selected_rows(BOOL is_deleting) {
+delete_selected_cells() {
+    unsigned r;
     if (is_selecting) {
-        if (is_deleting) {
-            delete_rows(&TheTable, SelStartRow, SelEndRow);
-            redraw_rows(SelStartRow, -1);
-        } else {
-            clear_rows(&TheTable, SelStartRow, SelEndRow);
-            redraw_rows(SelStartRow, SelEndRow - 1);
-        }
+        for (r = SelStartRow; r < SelEndRow; r++)
+            delete_cells(&TheTable, r, SelStartCol, SelCols);
+        redraw_rows(SelStartRow, SelEndRow - 1);
     } else {
-        if (is_deleting) {
-            delete_row(&TheTable, CurRow);
-            redraw_rows(CurRow, -1);
-        } else {
-            clear_row(&TheTable, CurRow);
-            redraw_rows(CurRow, CurRow);
-        }
+        delete_cells(&TheTable, CurRow, CurCol, 1);
+        redraw_rows(CurRow, CurRow);
+    }
+}
+
+clear_selected_rows() {
+    if (is_selecting) {
+        clear_rows(&TheTable, SelStartRow, SelRows);
+        redraw_rows(SelStartRow, SelEndRow - 1);
+    } else {
+        clear_rows(&TheTable, CurRow, 1);
+        redraw_rows(CurRow, CurRow);
+    }
+}
+
+delete_selected_rows() {
+    if (is_selecting) {
+        delete_rows(&TheTable, SelStartRow, SelRows);
+        redraw_rows(SelStartRow, -1);
+    } else {
+        delete_rows(&TheTable, CurRow, 1);
+        redraw_rows(CurRow, -1);
     }
 }
 
@@ -166,7 +172,7 @@ clear_file() {
 }
 
 clear_and_open(TCHAR *fn) {
-    delete_table(&TheTable);
+    delete_table(&TheTable); /* Do not use clear_file(); it clears the filename */
     if (!open_csv(TheFilename))
         MessageBox(TheWindow, L"Could not open the file", L"Error", MB_OK);
     is_selecting = 0;

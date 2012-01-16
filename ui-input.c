@@ -72,7 +72,8 @@ wm_char(HWND hwnd, unsigned wparam) {
     switch (wparam) {
     
     case 'L' - 'A' + 1:                         /* Delete Row */
-        delete_selected_rows(IsShiftDown());
+        if (IsShiftDown()) clear_selected_rows();
+        else delete_selected_rows();
         break;
         
     case 'N' - 'A' + 1:                           /* New File */
@@ -96,7 +97,8 @@ wm_char(HWND hwnd, unsigned wparam) {
     
     case 'X' - 'A' + 1:                                /* Cut */
         copy_to_clipboard();
-        delete_selected_cols(IsShiftDown());
+        if (IsShiftDown()) clear_selected_cells();
+        else delete_selected_cells();
         break;
     
     case 'V' - 'A' + 1:                              /* Paste */
@@ -170,11 +172,13 @@ wm_keydown(HWND hwnd, unsigned wparam) {
         if (IsCtrlDown())
             jump_cursor(row_count(&TheTable) - 1, CurCol);
         else
+//        IF ROW MAX IS 0?
             jump_cursor(CurRow, col_count(&TheTable, CurRow) - 1);
         break;
     
     case VK_DELETE:
-        delete_selected_cols(IsShiftDown());
+        if (IsShiftDown()) delete_selected_cells();
+        else clear_selected_cells();
         break;
     
     case VK_OEM_1: /* Semicolon */
@@ -198,11 +202,11 @@ wm_keydown(HWND hwnd, unsigned wparam) {
     case VK_OEM_PERIOD: /* . */
         if (IsCtrlDown())
             if (IsShiftDown()) {               /* Insert Cell */
-                insert_cell(&TheTable, CurRow, CurCol);
+                insert_cells(&TheTable, CurRow, CurCol, 1);
                 redraw_rows(CurRow, CurRow);
                 return 0;
             } else {                            /* Insert Row */
-                insert_row(&TheTable, CurRow);
+                insert_rows(&TheTable, CurRow, 1);
                 redraw_rows(CurRow, -1);
                 return 0;
             }

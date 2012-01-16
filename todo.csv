@@ -14,6 +14,5 @@ Priority,Type,Task
 4,Optimization,Only redraw in the invalid region
 6,Feature,Scrollbars
 9,Administrative,Gather all editing actions into one place
-9,Administrative,Stop using TheFilename as a temporary file name
 1,Feature,Warn if closing without saving
-9,Administrative,Merge delete row & delete rows
+3,Bug,Hitting END on a row with 0 columns does not update the window
