@@ -1,5 +1,5 @@
 Priority,Type,Task
-7,Feature,Headers
+8,Feature,Headers
 1,Feature,Resize Rows
 5,Feature,Edit status
 1,Bug,Output crlf/lf as input
@@ -13,6 +13,5 @@ Priority,Type,Task
 1,Feature,Warn if closing without saving
 3,Bug,Hitting END on a row with 0 columns does not update the window
 3,Bug,Columns are limited to 65536 by ColXs
-7,Feature,Scroll w/ Mouse Wheel
-8,Bug,Ghost text appear on last line
 4,Optimization,Push all redrawing out to command()
+7,Feature,Undo / Redo

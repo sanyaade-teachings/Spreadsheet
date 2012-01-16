@@ -84,7 +84,7 @@ redraw_rows(unsigned lo, unsigned hi) {
     if (hi < FirstRow || LastRow < lo);      /* Completely off screen */
     else {
         if (lo < FirstRow) lo = FirstRow;      /* Above before screen */
-        if (LastRow < hi) hi = LastRow - 1;      /* Ends after screen */
+        if (LastRow < hi) hi = LastRow;          /* Ends after screen */
         lor = get_cell_rect(lo, FirstCol);
         hir = get_cell_rect(hi, FirstCol);
         SetRect(&bad, 0, lor.top, WindowWidth, hir.bottom);
