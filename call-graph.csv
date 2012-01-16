@@ -6,11 +6,23 @@ auto_resize_column,,"unsigned col"
 	auto_resize_column,get_col_max_width
 	auto_resize_column,redraw_rows
 	auto_resize_column,resize_column
+calc_max_col,,"Table *table"
+	calc_max_col,clear_cells
+	calc_max_col,col_count
+	calc_max_col,delete_cells
+	calc_max_col,max
+	calc_max_col,max_col_count
+	calc_max_col,memmove
+	calc_max_col,min
+	calc_max_col,row_count
 calc_visible_fields,,""
 	calc_visible_fields,get_cell_x
 cancel_edit,,""
 	cancel_edit,SetFocus
 	cancel_edit,ShowWindow
+cell_has_text,,"Table *table, unsigned row, unsigned col, char *text"
+	cell_has_text,strstr
+	cell_has_text,try_cell
 clear_anchor,,""
 	clear_anchor,redraw_rows
 clear_and_open,,"TCHAR *fn"
@@ -27,10 +39,6 @@ clear_file,,""
 	clear_file,redraw_rows
 clear_rows,,"Table *table, unsigned row, unsigned n"
 	clear_rows,clear_cells
-	clear_rows,col_count
-	clear_rows,delete_cells
-	clear_rows,memmove
-	clear_rows,min
 clear_selected_cells,,""
 	clear_selected_cells,clear_cells
 	clear_selected_cells,redraw_rows
@@ -51,6 +59,8 @@ command,,"int cmd"
 	command,delete_selected_cells
 	command,delete_selected_rows
 	command,end_edit
+	command,find_cell_text_col
+	command,find_cell_text_row
 	command,insert_cells
 	command,insert_datetime
 	command,insert_rows
@@ -79,7 +89,10 @@ copy_to_clipboard,,""
 	copy_to_clipboard,unlink
 	copy_to_clipboard,write_csv_cells
 delete_rows,,"Table *table, unsigned row, unsigned n"
+	delete_rows,calc_max_col
 	delete_rows,clear_rows
+	delete_rows,col_count
+	delete_rows,max_col_count
 	delete_rows,memmove
 	delete_rows,min
 	delete_rows,row_count
@@ -112,6 +125,16 @@ exit_mouse_mode,,"HWND hwnd"
 	exit_mouse_mode,KillTimer
 	exit_mouse_mode,ReleaseCapture
 	exit_mouse_mode,SetCursor
+find_cell_text_col,,"Table *table, unsigned row, unsigned col, char *text"
+	find_cell_text_col,cell_has_text
+	find_cell_text_col,jump_cursor
+	find_cell_text_col,max_col_count
+	find_cell_text_col,row_count
+find_cell_text_row,,"Table *table, unsigned row, unsigned col, char *text"
+	find_cell_text_row,cell_has_text
+	find_cell_text_row,col_count
+	find_cell_text_row,jump_cursor
+	find_cell_text_row,row_count
 force_cell,,"Table *table, unsigned row, unsigned col"
 	force_cell,col_count
 	force_cell,get_cell
@@ -137,11 +160,14 @@ init_ui_input,,"HWND hwnd"
 	init_ui_input,CreateWindowEx
 	init_ui_input,GetModuleHandle
 	init_ui_input,LoadCursor
+	init_ui_input,max_col_count
 	init_ui_input,REALLOC
+	init_ui_input,RegisterWindowMessage
 	init_ui_input,row_count
 	init_ui_input,SetWindowFont
 	init_ui_input,SetWindowSubclass
 insert_cells,,"Table *table, unsigned row, unsigned col, unsigned n"
+	insert_cells,max
 	insert_cells,memmove
 	insert_cells,memset
 	insert_cells,REALLOC
@@ -229,6 +255,7 @@ set_anchor,,""
 set_cell,,"Table *table, unsigned row, unsigned col, char *str, unsigned len"
 	set_cell,assert
 	set_cell,force_cell
+	set_cell,free
 	set_cell,max
 	set_cell,memcpy
 	set_cell,need_escape
@@ -255,6 +282,7 @@ start_edit,,"int edit_existing"
 	start_edit,UnionRect
 wm_char,,"HWND hwnd, unsigned wparam"
 	wm_char,command
+	wm_char,FindTextA
 	wm_char,GetOpenFileName
 	wm_char,GetSaveFileName
 	wm_char,IsShiftDown
@@ -262,16 +290,18 @@ wm_char,,"HWND hwnd, unsigned wparam"
 wm_dropfiles,,"HWND hwnd, HDROP drop"
 	wm_dropfiles,command
 	wm_dropfiles,DragQueryFile
+wm_find,,"HWND hwnd, FINDREPLACE *find"
+	wm_find,command
+	wm_find,GetMessagePos
+	wm_find,GET_X_LPARAM
+	wm_find,GET_Y_LPARAM
+	wm_find,ScreenToClient
+	wm_find,scroll
+	wm_find,ScrollTimerProc
 wm_keydown,,"HWND hwnd, unsigned wparam"
 	wm_keydown,command
 	wm_keydown,exit_mouse_mode
-	wm_keydown,GetMessagePos
-	wm_keydown,GET_X_LPARAM
-	wm_keydown,GET_Y_LPARAM
 	wm_keydown,IsCtrlDown
-	wm_keydown,ScreenToClient
-	wm_keydown,scroll
-	wm_keydown,ScrollTimerProc
 wm_lbuttondblclk,,"HWND hwnd, unsigned x, unsigned y"
 	wm_lbuttondblclk,auto_resize_column
 	wm_lbuttondblclk,command
@@ -319,6 +349,7 @@ WndProc,,"HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam"
 	WndProc,end_edit
 	WndProc,GetMessage
 	WndProc,GetModuleHandle
+	WndProc,IsDialogMessage
 	WndProc,is_editing
 	WndProc,LoadCursor
 	WndProc,LoadIcon
@@ -337,6 +368,7 @@ WndProc,,"HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam"
 	WndProc,WinMain
 	WndProc,wm_char
 	WndProc,wm_dropfiles
+	WndProc,wm_find
 	WndProc,wm_keydown
 	WndProc,wm_lbuttondblclk
 	WndProc,wm_lbuttondown

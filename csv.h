@@ -2,12 +2,11 @@
 #define CELLLEN 65536
 
 #define IS_EOL 
-Table *read_csv(Table *table, unsigned row, unsigned left, char *f, char *eof, unsigned *max_rowp, unsigned *max_colp) {
-    unsigned col = left, max_row, max_col = left;
+Table *read_csv(Table *table, unsigned row, unsigned left, char *f, char *eof) {
+    unsigned col = left;
     
     row--;
 record:
-    max_col = max(col, max_col);
     col = left;
     row++;
     
@@ -51,8 +50,6 @@ record:
                 } else
                     f++;
         }
-    if (max_rowp) *max_rowp = row;
-    if (max_colp) *max_colp = max_col;
     return table;
 }
 static need_escape(unsigned char *text, unsigned len) {

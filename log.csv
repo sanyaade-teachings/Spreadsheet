@@ -34,3 +34,5 @@ Date,Task
 2012-01-16,Left align
 2012-01-16 14:02:28,Fixed bug where grid was not drawn properly beyond original viewing area
 2012-01-16 16:28:33,Find w/ wrapping for both row & column
+2012-01-16 16:43:49,Freed previous cell contents on setting
+2012-01-16 17:29:56,Columns are resized when file is cleared

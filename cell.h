@@ -8,6 +8,7 @@ typedef struct {
 } Row;
 typedef struct {
     unsigned n;
+    unsigned max_col;
     Row     *rows;
 } Table;
 
@@ -21,7 +22,7 @@ unsigned col_count(Table *table, unsigned row) {
     return row < row_count(table)? table->rows[row].n: 0;
 }
 unsigned max_col_count(Table *table) {
-    return 100;
+    return table->max_col;
 }
 insert_rows(Table *table, unsigned row, unsigned n) {
     if (row <= row_count(table)) {
@@ -36,6 +37,7 @@ insert_cells(Table *table, unsigned row, unsigned col, unsigned n) {
         Cell *c = REALLOC(r->cells, (r->n += n)) + col;
         memmove(c + n, c, (col_count(table, row) - col - n) * sizeof *c);
         memset(c, 0, n * sizeof *c);
+        table->max_col = max(table->max_col, r->n);
     }
 }
 clear_cells(Table *table, unsigned row, unsigned col, unsigned n) {
@@ -54,22 +56,38 @@ clear_rows(Table *table, unsigned row, unsigned n) {
         clear_cells(table, row, 0, col_count(table, row));
 }
 
+calc_max_col(Table *table) {
+    unsigned r;
+    table->max_col = 0;
+    for (r = 0; r < row_count(table); r++)
+        table->max_col = max(table->max_col, col_count(table, r));
+    return table->max_col;
+}
+
 delete_cells(Table *table, unsigned row, unsigned col, unsigned n){
     if (col < col_count(table, row)) {
         Cell *c = table->rows[row].cells + col;
+        unsigned old_count = col_count(table, row);
         clear_cells(table, row, col, n);
         n = min(n, col_count(table, row) - col);
         table->rows[row].n -= n;
         memmove(c, c + n, (col_count(table, row) - col) * sizeof *c);
+        
+        if (old_count == max_col_count(table))
+            calc_max_col(table);
     }
 }
 delete_rows(Table *table, unsigned row, unsigned n) {
     clear_rows(table, row, n);
     if (row < row_count(table)) {
+        unsigned old_count = col_count(table, row);
         Row *r = table->rows + row;
         n = min(n, row_count(table) - row);
         table->n -= n;
         memmove(r, r + n, (row_count(table) - row) * sizeof *r);
+        
+        if (old_count == max_col_count(table))
+            calc_max_col(table);
     }
 }
 delete_table(Table *table) {
@@ -98,6 +116,7 @@ set_cell(Table *table, unsigned row, unsigned col, char *str, unsigned len) {
     Cell *cell;
     force_cell(table, row, col);
     cell = table->rows[row].cells + col;
+    if (cell->str) free(cell->str);
     cell->str = memcpy(malloc(len+1), str, len + 1);
     cell->str[cell->len = len] = 0;
 }

@@ -29,6 +29,7 @@ TCHAR       TheFilename[MAX_PATH];
 char        TheFindText[MAX_PATH];
 
 #define MAX_ROWS_FOR_FIT 500
+#define MAX_COLS_FOR_FIT 500
 #define MIN_FIT_WIDTH 20
 #define MAX_FIT_WIDTH 300
 

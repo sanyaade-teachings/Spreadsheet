@@ -34,6 +34,32 @@ get_cell_under(unsigned x, unsigned y, unsigned *rowp, unsigned *colp, unsigned 
     if (is_resizep) *is_resizep = (r == FirstRow && ColXs[c] - x < 8);
 }
 
+calc_visible_fields() {
+    VisibleRows = ClientHeight / CellHeight;    
+    for (VisibleCols = 0; get_cell_x(VisibleCols+1) <= ClientWidth; VisibleCols++);    
+}
+
+resize_column(unsigned col, int dx) {
+    unsigned i;
+    for (i = col + 1; i < 65536; i++)
+        ColXs[i] += dx;
+    calc_visible_fields(); /* Field's may have shrunk or grown */
+}
+
+auto_resize_column(unsigned col) {
+    unsigned fit = get_col_max_width(col);
+    fit = clamp(MIN_FIT_WIDTH, fit, MAX_FIT_WIDTH);
+    resize_column(col, get_cell_x(col) + fit - get_cell_x(col + 1));
+    redraw_rows(0, -1);
+}
+
+reset_column_sizes() {
+    unsigned i;
+    ColXs[0] = 0;
+    for (i = 1; i < sizeof ColXs / sizeof *ColXs; i++)
+        ColXs[i] = ColXs[i - 1] + 80;
+}
+
 scroll(int row, int col) {
     FirstRow = max(0, (int)FirstRow + row);
     FirstCol = max(0, (int)FirstCol + col);
@@ -144,11 +170,6 @@ paint_table(HDC dc, Table *table) {
         paint_cell(dc, table, row, col, 1);
 }
 
-calc_visible_fields() {
-    VisibleRows = ClientHeight / CellHeight;    
-    for (VisibleCols = 0; get_cell_x(VisibleCols+1) <= ClientWidth; VisibleCols++);    
-}
-
 wm_size(HWND hwnd, unsigned width, unsigned height) {
     HDC dc = GetDC(hwnd);
     ClientWidth = (WindowWidth = width);
@@ -163,9 +184,7 @@ init_ui_display(HWND hwnd) {
     unsigned i;
     HDC dc = GetDC(hwnd);
     
-    ColXs[0] = 0;
-    for (i = 1; i < sizeof ColXs / sizeof *ColXs; i++)
-        ColXs[i] = ColXs[i - 1] + 80;
+    reset_column_sizes();
     
     SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
     

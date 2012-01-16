@@ -15,6 +15,7 @@ cancel_edit();
 end_edit() ;
 start_edit(int edit_existing);
 snap_to_cursor();
+reset_column_sizes();
 
 unsigned clamp(unsigned a, unsigned b, unsigned c) {
     return min(max(a, b), c);
@@ -93,13 +94,12 @@ paste_clipboard() {
         HANDLE handle = GetClipboardData(CF_TEXT);
         char *text = GlobalLock(handle);
         unsigned len = GlobalSize(handle);
-        unsigned max_row;
-        read_csv(&TheTable, CurRow, CurCol, text, text + len, &max_row, 0);
+        read_csv(&TheTable, CurRow, CurCol, text, text + len);
         GlobalUnlock(handle);
         CloseHandle(handle);
         CloseClipboard();
         snap_to_cursor();
-        redraw_rows(CurRow, max_row);
+        redraw_rows(CurRow, -1);
     }
 }
 
@@ -160,7 +160,7 @@ open_csv(TCHAR *fn) {
     fread(data = malloc(len), 1, len, f);
     fclose(f);
     
-    read_csv(&TheTable, 0, 0, data, data + len, 0, 0);
+    read_csv(&TheTable, 0, 0, data, data + len);
     free(data);
     
     jump_cursor(0, 0);
@@ -170,12 +170,14 @@ open_csv(TCHAR *fn) {
 
 clear_file() {
     TheFilename[0] = 0;
+    reset_column_sizes();
     delete_table(&TheTable);
     redraw_rows(0, -1);
     is_selecting = 0;
 }
 
 clear_and_open(TCHAR *fn) {
+    reset_column_sizes();
     delete_table(&TheTable); /* Do not use clear_file(); it clears the filename */
     if (!open_csv(TheFilename))
         MessageBox(TheWindow, L"Could not open the file", L"Error", MB_OK);

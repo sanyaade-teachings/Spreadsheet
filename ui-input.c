@@ -37,20 +37,6 @@ OPENFILENAME open_dlg = {
 #define IsShiftDown() (GetKeyState(VK_SHIFT) < 0)
 #define IsCtrlDown() (GetKeyState(VK_CONTROL) < 0)
 
-resize_column(unsigned col, int dx) {
-    unsigned i;
-    for (i = col + 1; i < 65536; i++)
-        ColXs[i] += dx;
-    calc_visible_fields(); /* Field's may have shrunk or grown */
-}
-
-auto_resize_column(unsigned col) {
-    unsigned fit = get_col_max_width(col);
-    fit = clamp(MIN_FIT_WIDTH, fit, MAX_FIT_WIDTH);
-    resize_column(col, get_cell_x(col) + fit - get_cell_x(col + 1));
-    redraw_rows(0, -1);
-}
-
 is_editing() {
     return GetWindowStyle(EditBox) & WS_VISIBLE;
 }

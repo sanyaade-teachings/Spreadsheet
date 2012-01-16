@@ -130,9 +130,10 @@ command(int cmd) {
     case CmdClearFile: clear_file(); break;
     case CmdOpenFile:
         clear_and_open(TheFilename);
-        if (row_count(&TheTable) < MAX_ROWS_FOR_FIT) {
+        if (row_count(&TheTable) < MAX_ROWS_FOR_FIT
+         && max_col_count(&TheTable) < MAX_COLS_FOR_FIT) {
             unsigned i;
-            for (i = 0; i < col_count(&TheTable, 0); i++)
+            for (i = 0; i < max_col_count(&TheTable); i++)
                 auto_resize_column(i);
         }
         break;
