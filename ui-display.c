@@ -1,3 +1,4 @@
+unsigned    ClientWidth, ClientHeight;
 unsigned    WindowWidth, WindowHeight;
 unsigned    VisibleRows, VisibleCols;
 unsigned    FirstRow, FirstCol;
@@ -112,18 +113,18 @@ paint_table(HDC dc, Table *table) {
     SelectObject(dc, GetStockObject(DC_PEN));
     SetDCBrushColor(dc, color_bg);
     SetDCPenColor(dc, color_grid);
-    Rectangle(dc, 0, 0, WindowWidth, WindowHeight);
+    Rectangle(dc, 0, 0, ClientWidth, ClientHeight);
     
     /* Draw Alternating Rows */
     SetDCBrushColor(dc, color_bg2);
     SelectObject(dc, GetStockObject(NULL_PEN));
     for (row = FirstRow; row <= LastRow; row += 2)
-        Rectangle(dc, 0, get_cell_y(row), WindowWidth, get_cell_y(row + 1));
+        Rectangle(dc, 0, get_cell_y(row), ClientWidth, get_cell_y(row + 1));
     
     /* Draw Grid */
     SelectObject(dc, GetStockObject(DC_PEN));
     for (col = FirstCol; col <= LastCol; col++)
-        DrawLine(dc, get_cell_x(col), 0, get_cell_x(col), WindowHeight);
+        DrawLine(dc, get_cell_x(col), 0, get_cell_x(col), ClientHeight);
     
     /* Draw Cursor & selection rectangle */
     SetDCBrushColor(dc, color_cur_bg);
@@ -144,14 +145,14 @@ paint_table(HDC dc, Table *table) {
 }
 
 calc_visible_fields() {
-    VisibleRows = WindowHeight / CellHeight;    
-    for (VisibleCols = 0; get_cell_x(VisibleCols+1) <= WindowWidth; VisibleCols++);    
+    VisibleRows = ClientHeight / CellHeight;    
+    for (VisibleCols = 0; get_cell_x(VisibleCols+1) <= ClientWidth; VisibleCols++);    
 }
 
 wm_size(HWND hwnd, unsigned width, unsigned height) {
     HDC dc = GetDC(hwnd);
-    WindowWidth = width;
-    WindowHeight = height;
+    ClientWidth = (WindowWidth = width);
+    ClientHeight = (WindowHeight = height);
     calc_visible_fields();
     DeleteBitmap(SelectBitmap(WindowBuffer,
         CreateCompatibleBitmap(dc, WindowWidth, WindowHeight)));

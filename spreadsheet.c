@@ -48,8 +48,15 @@ WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     case WM_PAINT:
         BeginPaint(hwnd, &ps);
         paint_table(WindowBuffer, &TheTable);
-        BitBlt(ps.hdc, 0, 0, WindowWidth, WindowHeight,
-            WindowBuffer, 0, 0, SRCCOPY);
+        BitBlt(ps.hdc,
+            ps.rcPaint.left,
+            ps.rcPaint.top,
+            ps.rcPaint.right - ps.rcPaint.left,
+            ps.rcPaint.bottom - ps.rcPaint.top,
+            WindowBuffer,
+            ps.rcPaint.left,
+            ps.rcPaint.top,
+            SRCCOPY);
         EndPaint(hwnd, &ps);
         return 0;
     case WM_SIZE: wm_size(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
