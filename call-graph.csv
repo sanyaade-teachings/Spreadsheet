@@ -1,0 +1,373 @@
+Caller,Target,Params
+	,auto_resize_column
+	,scroll
+auto_resize_column,,"unsigned col"
+	auto_resize_column,clamp
+	auto_resize_column,get_col_max_width
+	auto_resize_column,redraw_rows
+	auto_resize_column,resize_column
+calc_visible_fields,,""
+	calc_visible_fields,get_cell_x
+cancel_edit,,""
+	cancel_edit,SetFocus
+	cancel_edit,ShowWindow
+clear_anchor,,""
+	clear_anchor,redraw_rows
+clear_and_open,,"TCHAR *fn"
+	clear_and_open,delete_table
+	clear_and_open,MessageBox
+	clear_and_open,open_csv
+	clear_and_open,redraw_rows
+clear_cells,,"Table *table, unsigned row, unsigned col, unsigned n"
+	clear_cells,col_count
+	clear_cells,free
+	clear_cells,min
+clear_file,,""
+	clear_file,delete_table
+	clear_file,redraw_rows
+clear_rows,,"Table *table, unsigned row, unsigned n"
+	clear_rows,clear_cells
+	clear_rows,col_count
+	clear_rows,delete_cells
+	clear_rows,memmove
+	clear_rows,min
+clear_selected_cells,,""
+	clear_selected_cells,clear_cells
+	clear_selected_cells,redraw_rows
+clear_selected_rows,,""
+	clear_selected_rows,clear_rows
+	clear_selected_rows,redraw_rows
+command,,"int cmd"
+	command,auto_resize_column
+	command,cancel_edit
+	command,clear_anchor
+	command,clear_and_open
+	command,clear_file
+	command,clear_selected_cells
+	command,clear_selected_rows
+	command,col_count
+	command,comment
+	command,copy_to_clipboard
+	command,delete_selected_cells
+	command,delete_selected_rows
+	command,end_edit
+	command,insert_cells
+	command,insert_datetime
+	command,insert_rows
+	command,jump_cursor
+	command,move_cursor
+	command,redraw_rows
+	command,row_count
+	command,save_csv
+	command,scroll
+	command,set_anchor
+	command,start_edit
+copy_to_clipboard,,""
+	copy_to_clipboard,CloseClipboard
+	copy_to_clipboard,EmptyClipboard
+	copy_to_clipboard,fclose
+	copy_to_clipboard,fopen
+	copy_to_clipboard,fread
+	copy_to_clipboard,ftell
+	copy_to_clipboard,GlobalAlloc
+	copy_to_clipboard,GlobalLock
+	copy_to_clipboard,GlobalUnlock
+	copy_to_clipboard,OpenClipboard
+	copy_to_clipboard,rewind
+	copy_to_clipboard,SetClipboardData
+	copy_to_clipboard,tempnam
+	copy_to_clipboard,unlink
+	copy_to_clipboard,write_csv_cells
+delete_rows,,"Table *table, unsigned row, unsigned n"
+	delete_rows,clear_rows
+	delete_rows,memmove
+	delete_rows,min
+	delete_rows,row_count
+delete_selected_cells,,""
+	delete_selected_cells,delete_cells
+	delete_selected_cells,redraw_rows
+delete_selected_rows,,""
+	delete_selected_rows,delete_rows
+	delete_selected_rows,redraw_rows
+delete_table,,"Table *table"
+	delete_table,col_count
+	delete_table,delete_rows
+	delete_table,try_cell
+EditProc,,"HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_PTR data"
+	EditProc,command
+	EditProc,DefSubclassProc
+	EditProc,IsCtrlDown
+end_edit,,""
+	end_edit,cancel_edit
+	end_edit,GetWindowTextLength
+	end_edit,is_editing
+	end_edit,redraw_rows
+	end_edit,set_cell
+enter_mouse_mode,,"HWND hwnd, unsigned mode, unsigned x, unsigned y"
+	enter_mouse_mode,exit_mouse_mode
+	enter_mouse_mode,SetCapture
+	enter_mouse_mode,SetCursor
+	enter_mouse_mode,SetTimer
+exit_mouse_mode,,"HWND hwnd"
+	exit_mouse_mode,KillTimer
+	exit_mouse_mode,ReleaseCapture
+	exit_mouse_mode,SetCursor
+force_cell,,"Table *table, unsigned row, unsigned col"
+	force_cell,col_count
+	force_cell,get_cell
+	force_cell,insert_cells
+	force_cell,insert_rows
+	force_cell,row_count
+	force_cell,try_cell
+get_cell_under,,"unsigned x, unsigned y, unsigned *rowp, unsigned *colp, unsigned *is_resizep"
+get_col_max_width,,"unsigned col"
+	get_col_max_width,max
+	get_col_max_width,row_count
+init_ui_display,,"HWND hwnd"
+	init_ui_display,CreateCompatibleDC
+	init_ui_display,CreateFont
+	init_ui_display,GetDC
+	init_ui_display,IsCtrlDown
+	init_ui_display,IsShiftDown
+	init_ui_display,ReleaseDC
+	init_ui_display,SelectBitmap
+	init_ui_display,SetLayeredWindowAttributes
+init_ui_input,,"HWND hwnd"
+	init_ui_input,col_count
+	init_ui_input,CreateWindowEx
+	init_ui_input,GetModuleHandle
+	init_ui_input,LoadCursor
+	init_ui_input,REALLOC
+	init_ui_input,row_count
+	init_ui_input,SetWindowFont
+	init_ui_input,SetWindowSubclass
+insert_cells,,"Table *table, unsigned row, unsigned col, unsigned n"
+	insert_cells,memmove
+	insert_cells,memset
+	insert_cells,REALLOC
+	insert_cells,row_count
+insert_datetime,,"int include_time"
+	insert_datetime,GetLocalTime
+	insert_datetime,redraw_rows
+	insert_datetime,set_cell
+	insert_datetime,sprintf
+insert_rows,,"Table *table, unsigned row, unsigned n"
+	insert_rows,memmove
+	insert_rows,memset
+	insert_rows,REALLOC
+	insert_rows,row_count
+is_editing,,""
+	is_editing,GetWindowStyle
+jump_cursor,,"unsigned row, unsigned col"
+	jump_cursor,abs
+	jump_cursor,end_edit
+	jump_cursor,redraw_rows
+	jump_cursor,snap_to_cursor
+move_cursor,,"int row, int col"
+	move_cursor,jump_cursor
+open_csv,,"TCHAR *fn"
+	open_csv,fclose
+	open_csv,fread
+	open_csv,free
+	open_csv,fseek
+	open_csv,ftell
+	open_csv,jump_cursor
+	open_csv,read_csv
+	open_csv,redraw_rows
+	open_csv,rewind
+	open_csv,_wfopen
+paint_cell,,"HDC dc, Table *table, unsigned row, unsigned col, unsigned is_drawn"
+	paint_cell,DrawTextA
+	paint_cell,get_cell_rect
+	paint_cell,InflateRect
+	paint_cell,try_cell
+paint_table,,"HDC dc, Table *table"
+	paint_table,DrawLine
+	paint_table,get_cell_rect
+	paint_table,get_cell_x
+	paint_table,paint_cell
+	paint_table,Rectangle
+	paint_table,SelectFont
+	paint_table,SelectObject
+	paint_table,SetBkMode
+	paint_table,SetDCBrushColor
+	paint_table,SetDCPenColor
+paste_clipboard,,""
+	paste_clipboard,CloseClipboard
+	paste_clipboard,CloseHandle
+	paste_clipboard,GetClipboardData
+	paste_clipboard,GlobalLock
+	paste_clipboard,GlobalSize
+	paste_clipboard,GlobalUnlock
+	paste_clipboard,OpenClipboard
+	paste_clipboard,read_csv
+	paste_clipboard,redraw_rows
+	paste_clipboard,snap_to_cursor
+redraw_rows,,"unsigned lo, unsigned hi"
+	redraw_rows,get_cell_rect
+	redraw_rows,InvalidateRect
+	redraw_rows,max
+	redraw_rows,min
+	redraw_rows,SetRect
+resize_column,,"unsigned col, int dx"
+	resize_column,calc_visible_fields
+save_csv,,"TCHAR *fn"
+	save_csv,fclose
+	save_csv,get_cell_x
+	save_csv,get_cell_y
+	save_csv,MessageBox
+	save_csv,RGB
+	save_csv,write_csv
+	save_csv,_wfopen
+scroll,,"int row, int col"
+	scroll,max
+	scroll,redraw_rows
+setup_resources,,"HWND hwnd"
+	setup_resources,init_ui_display
+	setup_resources,init_ui_input
+set_anchor,,""
+set_cell,,"Table *table, unsigned row, unsigned col, char *str, unsigned len"
+	set_cell,assert
+	set_cell,force_cell
+	set_cell,max
+	set_cell,memcpy
+	set_cell,need_escape
+	set_cell,read_csv
+snap_to_cursor,,""
+	snap_to_cursor,DrawLine
+	snap_to_cursor,get_cell_rect
+	snap_to_cursor,get_cell_x
+	snap_to_cursor,LineTo
+	snap_to_cursor,max
+	snap_to_cursor,MoveToEx
+	snap_to_cursor,redraw_rows
+	snap_to_cursor,SetRect
+start_edit,,"int edit_existing"
+	start_edit,DrawTextA
+	start_edit,get_cell_rect
+	start_edit,is_editing
+	start_edit,MoveWindow
+	start_edit,SetFocus
+	start_edit,SetWindowText
+	start_edit,SetWindowTextA
+	start_edit,ShowWindow
+	start_edit,try_cell
+	start_edit,UnionRect
+wm_char,,"HWND hwnd, unsigned wparam"
+	wm_char,command
+	wm_char,GetOpenFileName
+	wm_char,GetSaveFileName
+	wm_char,IsShiftDown
+	wm_char,SendMessage
+wm_dropfiles,,"HWND hwnd, HDROP drop"
+	wm_dropfiles,command
+	wm_dropfiles,DragQueryFile
+wm_keydown,,"HWND hwnd, unsigned wparam"
+	wm_keydown,command
+	wm_keydown,exit_mouse_mode
+	wm_keydown,GetMessagePos
+	wm_keydown,GET_X_LPARAM
+	wm_keydown,GET_Y_LPARAM
+	wm_keydown,IsCtrlDown
+	wm_keydown,ScreenToClient
+	wm_keydown,scroll
+	wm_keydown,ScrollTimerProc
+wm_lbuttondblclk,,"HWND hwnd, unsigned x, unsigned y"
+	wm_lbuttondblclk,auto_resize_column
+	wm_lbuttondblclk,command
+	wm_lbuttondblclk,exit_mouse_mode
+	wm_lbuttondblclk,get_cell_under
+	wm_lbuttondblclk,jump_cursor
+	wm_lbuttondblclk,start_edit
+wm_lbuttondown,,"HWND hwnd, unsigned x, unsigned y"
+	wm_lbuttondown,command
+	wm_lbuttondown,enter_mouse_mode
+	wm_lbuttondown,exit_mouse_mode
+	wm_lbuttondown,get_cell_under
+	wm_lbuttondown,jump_cursor
+wm_lbuttonup,,"HWND hwnd, unsigned x, unsigned y"
+	wm_lbuttonup,exit_mouse_mode
+wm_mbuttondown,,"HWND hwnd, unsigned x, unsigned y"
+	wm_mbuttondown,enter_mouse_mode
+wm_mbuttonup,,"HWND hwnd, unsigned x, unsigned y"
+	wm_mbuttonup,exit_mouse_mode
+wm_mousemove,,"HWND hwnd, unsigned x, unsigned y"
+	wm_mousemove,GetCursor
+	wm_mousemove,get_cell_under
+	wm_mousemove,redraw_rows
+	wm_mousemove,resize_column
+	wm_mousemove,SetCursor
+wm_mousewheel,,"HWND hwnd, int delta"
+	wm_mousewheel,scroll
+wm_size,,"HWND hwnd, unsigned width, unsigned height"
+	wm_size,calc_visible_fields
+	wm_size,CreateCompatibleBitmap
+	wm_size,DeleteBitmap
+	wm_size,GetDC
+	wm_size,ReleaseDC
+WndProc,,"HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam"
+	WndProc,BeginPaint
+	WndProc,BitBlt
+	WndProc,cancel_edit
+	WndProc,clamp
+	WndProc,command
+	WndProc,CommandLineToArgvW
+	WndProc,CreateWindowEx
+	WndProc,DefWindowProc
+	WndProc,DispatchMessage
+	WndProc,EndPaint
+	WndProc,end_edit
+	WndProc,GetMessage
+	WndProc,GetModuleHandle
+	WndProc,is_editing
+	WndProc,LoadCursor
+	WndProc,LoadIcon
+	WndProc,main
+	WndProc,max
+	WndProc,min
+	WndProc,paint_table
+	WndProc,PostQuitMessage
+	WndProc,RegisterClass
+	WndProc,setup_resources
+	WndProc,snap_to_cursor
+	WndProc,start_edit
+	WndProc,TEXT
+	WndProc,TranslateMessage
+	WndProc,wcscpy
+	WndProc,WinMain
+	WndProc,wm_char
+	WndProc,wm_dropfiles
+	WndProc,wm_keydown
+	WndProc,wm_lbuttondblclk
+	WndProc,wm_lbuttondown
+	WndProc,wm_lbuttonup
+	WndProc,wm_mbuttondown
+	WndProc,wm_mbuttonup
+	WndProc,wm_mousemove
+	WndProc,wm_mousewheel
+	WndProc,wm_size
+write_csv,,"FILE *f, Table table"
+	write_csv,fputs
+	write_csv,write_csv_row
+write_csv_cell,,"FILE *f, Cell cell"
+	write_csv_cell,fwrite
+	write_csv_cell,need_escape
+	write_csv_cell,putc
+write_csv_cells,,"FILE *f, Table *table, unsigned row_lo, unsigned row_hi, unsigned col_lo, unsigned col_hi"
+	write_csv_cells,add_fixnum
+	write_csv_cells,div_fixnum
+	write_csv_cells,fputs
+	write_csv_cells,isdigit
+	write_csv_cells,labs
+	write_csv_cells,mul_fixnum
+	write_csv_cells,parse_fixnum
+	write_csv_cells,putc
+	write_csv_cells,spell_fixnum
+	write_csv_cells,sprintf
+	write_csv_cells,strspn
+	write_csv_cells,strtol
+	write_csv_cells,sub_fixnum
+	write_csv_cells,write_csv_cell
+write_csv_row,,"FILE *f, Row row"
+	write_csv_row,putc
+	write_csv_row,write_csv_cell

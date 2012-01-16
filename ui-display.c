@@ -172,7 +172,7 @@ init_ui_display(HWND hwnd) {
     WindowBuffer = CreateCompatibleDC(dc);
     SelectBitmap(WindowBuffer, CreateCompatibleBitmap(dc, 1, 1));
     
-    font_cell = CreateFont(12 * -GetDeviceCaps(dc, LOGPIXELSY)/72, 0,
+    font_cell = CreateFont(10 * -GetDeviceCaps(dc, LOGPIXELSY)/72, 0,
         0, 0, FW_NORMAL,
         0, 0, 0, DEFAULT_CHARSET, CLIP_DEFAULT_PRECIS, OUT_DEFAULT_PRECIS,
         DRAFT_QUALITY, FF_DONTCARE, L"Constantia");

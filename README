@@ -24,3 +24,5 @@ MOVEMENT KEYS
 MOUSE
     Click           Set Cursor
     Double-Click    Edit Cell
+    Middle-Click    Mouse Scroll Lock
+    Wheel           Vertical Scroll
