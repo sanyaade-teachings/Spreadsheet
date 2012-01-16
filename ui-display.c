@@ -114,14 +114,15 @@ paint_table(HDC dc, Table *table) {
     SetDCPenColor(dc, color_grid);
     Rectangle(dc, 0, 0, WindowWidth, WindowHeight);
     
+    /* Draw Alternating Rows */
     SetDCBrushColor(dc, color_bg2);
     SelectObject(dc, GetStockObject(NULL_PEN));
-    for (row = 0; row <= VisibleRows; row += 2)
-        Rectangle(dc, 0, row*CellHeight, WindowWidth, (row+1)*CellHeight);
+    for (row = FirstRow; row <= LastRow; row += 2)
+        Rectangle(dc, 0, get_cell_y(row), WindowWidth, get_cell_y(row + 1));
     
     /* Draw Grid */
     SelectObject(dc, GetStockObject(DC_PEN));
-    for (col = 0; col <= VisibleCols; col++)
+    for (col = FirstCol; col <= LastCol; col++)
         DrawLine(dc, get_cell_x(col), 0, get_cell_x(col), WindowHeight);
     
     /* Draw Cursor & selection rectangle */

@@ -32,3 +32,4 @@ Date,Task
 2012-01-15 23:38:48,Cleaned up internals of cell.h
 2012-01-16 04:00:04,"Resizing columns and double-click auto-fit columns w/ min,max"
 2012-01-16,Left align
+2012-01-16 14:02:28,Fixed bug where grid was not drawn properly beyond original viewing area
