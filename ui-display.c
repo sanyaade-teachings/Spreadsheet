@@ -128,12 +128,10 @@ paint_table(HDC dc, Table *table) {
     /* Draw Cursor & selection rectangle */
     SetDCBrushColor(dc, color_cur_bg);
     SetDCPenColor(dc, color_cur_grid);
-    if (is_selecting) {
-        rt = get_cell_rect(CurRow, CurCol);
-        rt2 = get_cell_rect(AnchorRow, AnchorCol);
-        UnionRect(&rt, &rt, &rt2);
-        Rectangle(dc, rt.left, rt.top, rt.right, rt.bottom);
-    }
+    if (is_selecting)
+        Rectangle(dc,
+            (int)get_cell_x(SelStartCol), (int)get_cell_y(SelStartRow),
+            (int)get_cell_x(SelEndCol), (int)get_cell_y(SelEndRow));
     rt = get_cell_rect(CurRow, CurCol);
     Rectangle(dc, rt.left, rt.top, rt.right, rt.bottom);
     
