@@ -27,6 +27,10 @@ HWND        EditBox;
 
 TCHAR       TheFilename[MAX_PATH];
 
+#define MAX_ROWS_FOR_FIT 500
+#define MIN_FIT_WIDTH 20
+#define MAX_FIT_WIDTH 300
+
 #include "ui-control.c"
 #include "action.c"
 #include "ui-display.c"
@@ -82,10 +86,10 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
         0, 0, GetModuleHandle(0), 0);
     
     /* Open command line file */
-    if (argv[1] && !open_csv(argv[1]))
-        MessageBox(TheWindow, L"Could not open the file", L"Error", MB_OK);
-    else if (argv[1])
+    if (argv[1]) {
         wcscpy(TheFilename, argv[1]);
+        command(CmdOpenFile);
+    }
     
     while (GetMessage(&msg,0,0,0)) {
         TranslateMessage(&msg);

@@ -1,5 +1,3 @@
-#define MIN_FIT_WIDTH 20
-#define MAX_FIT_WIDTH 300
 
 unsigned    is_resizing_col;
 unsigned    resizing_col;
@@ -16,6 +14,20 @@ OPENFILENAME    open_dlg = {
 #define IsShiftDown() (GetKeyState(VK_SHIFT) < 0)
 #define IsCtrlDown() (GetKeyState(VK_CONTROL) < 0)
 
+resize_column(unsigned col, int dx) {
+    unsigned i;
+    for (i = col + 1; i < 65536; i++)
+        ColXs[i] += dx;
+    calc_visible_fields(); /* Field's may have shrunk or grown */
+}
+
+auto_resize_column(unsigned col) {
+    unsigned fit = get_col_max_width(col);
+    fit = clamp(MIN_FIT_WIDTH, fit, MAX_FIT_WIDTH);
+    resize_column(col, get_cell_x(col) + fit - get_cell_x(col + 1));
+    redraw_rows(0, -1);
+}
+
 is_editing() {
     return GetWindowStyle(EditBox) & WS_VISIBLE;
 }
@@ -27,7 +39,7 @@ cancel_edit() {
 
 end_edit() {
     if (is_editing()) {
-        char buf[65536];
+        char buf[65536];           /* An EDIT control's limit */
         int len = GetWindowTextLength(EditBox);
         GetWindowTextA (EditBox, buf, len + 1);
         set_cell(&TheTable, CurRow, CurCol, buf, len);
@@ -223,9 +235,7 @@ wm_lbuttonup(HWND hwnd, unsigned x, unsigned y) {
 
 wm_mousemove(HWND hwnd, unsigned x, unsigned y) {
     if (is_resizing_col) {
-        unsigned i, dx = x - ColXs[resizing_col + 1];
-        for (i = resizing_col + 1; i < 65536; i++)
-            ColXs[i] += dx;
+        resize_column(resizing_col, x - get_cell_x(resizing_col + 1));
         redraw_rows(0, -1);
     } else {
         unsigned row, col, is_resize;
@@ -240,14 +250,9 @@ wm_mousemove(HWND hwnd, unsigned x, unsigned y) {
 wm_lbuttondblclk(HWND hwnd, unsigned x, unsigned y) {
     unsigned row, col, is_resize;
     get_cell_under(x, y, &row, &col, &is_resize);
-    if (is_resize) {
-        unsigned i, dx, fit = get_col_max_width(col);
-        fit = clamp(MIN_FIT_WIDTH, fit, MAX_FIT_WIDTH);
-        dx = get_cell_x(col) + fit - get_cell_x(col + 1);
-        for (i = col + 1; i < 65536; i++)
-            ColXs[i] += dx;
-        redraw_rows(0, -1);
-    } else {
+    if (is_resize)
+        auto_resize_column(col);
+    else {
         command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
         jump_cursor(row, col);
         command(CmdEditCell);
@@ -266,7 +271,7 @@ init_ui_input(HWND hwnd) {
     open_dlg.hwndOwner = hwnd;
     
     EditBox = CreateWindowEx(0, TEXT("EDIT"), TEXT(""),
-        WS_CHILD | ES_RIGHT | ES_AUTOHSCROLL | ES_AUTOVSCROLL
+        WS_CHILD | ES_AUTOHSCROLL | ES_AUTOVSCROLL
         | ES_MULTILINE | ES_WANTRETURN, 0, 0, 0, 0,
         hwnd, 0, GetModuleHandle(0), 0);
     SetWindowFont(EditBox, font_cell, 0);

@@ -188,6 +188,7 @@ save_csv(TCHAR *fn) {
     if (f) {
         write_csv(f, TheTable);
         fclose(f);
-    }
+    } else
+        MessageBox(TheWindow, L"Could not save the file", L"Error", MB_OK);
     return !!f;
 }

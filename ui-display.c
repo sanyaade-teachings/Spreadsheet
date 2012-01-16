@@ -101,7 +101,7 @@ paint_cell(HDC dc, Table *table, unsigned row, unsigned col, unsigned is_drawn) 
     InflateRect(&rt, -3, -3);
     if (!cell.len) return 0;
     DrawTextA(dc, cell.str, cell.len, &rt,
-        DT_NOPREFIX | DT_RIGHT | (is_drawn? 0: DT_CALCRECT));
+        DT_NOPREFIX | (is_drawn? 0: DT_CALCRECT));
     return rt.right - rt.left;
 }
 
@@ -143,14 +143,16 @@ paint_table(HDC dc, Table *table) {
         paint_cell(dc, table, row, col, 1);
 }
 
+calc_visible_fields() {
+    VisibleRows = WindowHeight / CellHeight;    
+    for (VisibleCols = 0; get_cell_x(VisibleCols+1) <= WindowWidth; VisibleCols++);    
+}
+
 wm_size(HWND hwnd, unsigned width, unsigned height) {
     HDC dc = GetDC(hwnd);
     WindowWidth = width;
     WindowHeight = height;
-    VisibleRows = WindowHeight / CellHeight;
-    
-    for (VisibleCols = 0; get_cell_x(VisibleCols+1) <= WindowWidth; VisibleCols++);    
-    
+    calc_visible_fields();
     DeleteBitmap(SelectBitmap(WindowBuffer,
         CreateCompatibleBitmap(dc, WindowWidth, WindowHeight)));
     ReleaseDC(hwnd, dc);

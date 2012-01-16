@@ -50,6 +50,7 @@ enum {
 };
 
 scroll(int row, int col);
+auto_resize_column(unsigned col);
 
 insert_datetime(int include_time) {
     char timestr[32];
@@ -71,11 +72,15 @@ command(int cmd) {
     switch (cmd) {
     
     case CmdClearFile: clear_file(); break;
-    case CmdOpenFile:  clear_and_open(TheFilename); break;    
-    case CmdSaveFile:
-        if (!save_csv(TheFilename))
-            MessageBox(TheWindow, L"Could not save the file", L"Error", MB_OK);
+    case CmdOpenFile:
+        clear_and_open(TheFilename);
+        if (row_count(&TheTable) < MAX_ROWS_FOR_FIT) {
+            unsigned i;
+            for (i = 0; i < col_count(&TheTable, 0); i++)
+                auto_resize_column(i);
+        }
         break;
+    case CmdSaveFile: save_csv(TheFilename); break;
     
     case CmdSetAnchor: set_anchor(); break;
     case CmdClearAnchor: clear_anchor(); break;
