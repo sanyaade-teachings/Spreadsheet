@@ -4,8 +4,8 @@ unsigned    CurRow, CurCol;
 unsigned    AnchorRow, AnchorCol;
 #define     SelStartRow min(CurRow, AnchorRow)
 #define     SelStartCol min(CurCol, AnchorCol)
-#define     SelEndRow (max(CurRow, AnchorRow) + 1)
-#define     SelEndCol (max(CurCol, AnchorCol) + 1)
+#define     SelEndRow   (max(CurRow, AnchorRow) + 1)
+#define     SelEndCol   (max(CurCol, AnchorCol) + 1)
 #define     SelRows     (SelEndRow - SelStartRow)
 #define     SelCols     (SelEndCol - SelStartCol)
 BOOL        is_selecting;

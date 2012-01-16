@@ -28,6 +28,7 @@ HWND        EditBox;
 TCHAR       TheFilename[MAX_PATH];
 
 #include "ui-control.c"
+#include "action.c"
 #include "ui-display.c"
 #include "ui-input.c"
 

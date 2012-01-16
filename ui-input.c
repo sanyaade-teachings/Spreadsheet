@@ -54,15 +54,15 @@ EditProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_P
         switch (wparam) {
         case VK_RETURN:
             if (IsCtrlDown()) break;
-            end_edit();
+            command(CmdCommitEdit);
             return 0;
         case VK_TAB:
             if (IsCtrlDown()) break;
-            end_edit();
-            move_cursor(0, 1);
+            command(CmdTab);
+            command(CmdCommitEdit);
             return 0;
         case VK_ESCAPE:
-            cancel_edit();
+            command(CmdCancelEdit);
             return 0;
         }
     return DefSubclassProc(hwnd, msg, wparam, lparam);
@@ -72,53 +72,47 @@ wm_char(HWND hwnd, unsigned wparam) {
     switch (wparam) {
     
     case 'L' - 'A' + 1:                         /* Delete Row */
-        if (IsShiftDown()) clear_selected_rows();
-        else delete_selected_rows();
+        if (IsShiftDown()) command(CmdDeleteRow);
+        else command(CmdClearRow);
         break;
         
     case 'N' - 'A' + 1:                           /* New File */
-        clear_file();
+        command(CmdClearFile);
         break;
         
     case 'O' - 'A' + 1:                          /* Open file */
-        if (GetOpenFileName(&open_dlg))
-            clear_and_open(TheFilename);
+        if (GetOpenFileName(&open_dlg))        
+            command(CmdOpenFile);
         break;
     
     case 'S' - 'A' + 1:                          /* Save File */
         if (TheFilename[0] || GetSaveFileName(&open_dlg))
-            if (!save_csv(TheFilename))
-                MessageBox(hwnd, L"Could not save the file", L"Error", MB_OK);
+            command(CmdSaveFile);
         break;
     
     case 'C' - 'A' + 1:                               /* Copy */
-        copy_to_clipboard();
+        command(CmdCopy);
         break;
     
     case 'X' - 'A' + 1:                                /* Cut */
-        copy_to_clipboard();
-        if (IsShiftDown()) clear_selected_cells();
-        else delete_selected_cells();
+        command(IsShiftDown()? CmdCutDelete: CmdCutClear);
         break;
     
     case 'V' - 'A' + 1:                              /* Paste */
-        clear_anchor();
-        paste_clipboard();
+        command(CmdPaste);
         break;
         
     case VK_RETURN:                                  /* Enter */
-        clear_anchor();
-        move_cursor(IsShiftDown()? -1: 1, 0);
+        command(IsShiftDown()? CmdUnReturn: CmdReturn);
         break;
         
     case VK_TAB:                                       /* Tab */
-        clear_anchor();
-        move_cursor(0, IsShiftDown()? -1: 1);
+        command(IsShiftDown()? CmdUnTab: CmdTab);
         break;
     
     default:                                /* Auto-edit cell */
         /* Don't drop the char; forward it to the editor */
-        start_edit(0);
+        command(CmdEditCellClear);
         SendMessage(EditBox, WM_CHAR, wparam, 0); 
         break;
     }
@@ -129,106 +123,88 @@ wm_keydown(HWND hwnd, unsigned wparam) {
     switch (wparam) {
     
     case VK_UP:
-        if (IsCtrlDown()) scroll(-1, 0);
+        if (IsCtrlDown())
+            command(CmdScrollUp);
         else {
-            if (IsShiftDown()) set_anchor(); else clear_anchor();
-            move_cursor(-1, 0);
+            command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+            command(CmdMoveUp);
         }
         break;
     case VK_DOWN:
-        if (IsCtrlDown()) scroll(1, 0);
+        if (IsCtrlDown())
+            command(CmdScrollDown);
         else  {
-            if (IsShiftDown()) set_anchor(); else clear_anchor();
-            move_cursor(1, 0);
+            command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+            command(CmdMoveDown);
         }
         break;
     case VK_LEFT:
-        if (IsCtrlDown()) scroll(0, -1);
+        if (IsCtrlDown())
+            command(CmdScrollLeft);
         else {
-            if (IsShiftDown()) set_anchor(); else clear_anchor();
-            move_cursor(0, -1);
+            command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+            command(CmdMoveLeft);
         }
         break;
     case VK_RIGHT:
-        if (IsCtrlDown()) scroll(0, 1);
+        if (IsCtrlDown())
+            command(CmdScrollRight);
         else {
-            if (IsShiftDown()) set_anchor(); else clear_anchor();
-            move_cursor(0, 1);
+            command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+            command(CmdMoveRight);
         }
         break;
     
-    case VK_F2: start_edit(1); break;
+    case VK_F2:
+        command(CmdEditCell);
+        break;
     
     case VK_HOME:
-        if (IsShiftDown()) set_anchor();
-        if (IsCtrlDown())
-            jump_cursor(0, CurCol);
-        else
-            jump_cursor(CurRow, 0);
+        command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+        command(IsCtrlDown()? CmdHomeCol: CmdHomeRow);    
         break;
         
     case VK_END:
-        if (IsShiftDown()) set_anchor(); else clear_anchor();
-        if (IsCtrlDown())
-            jump_cursor(row_count(&TheTable) - 1, CurCol);
-        else
-//        IF ROW MAX IS 0?
-            jump_cursor(CurRow, col_count(&TheTable, CurRow) - 1);
+        command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+        command(IsCtrlDown()? CmdEndCol: CmdEndRow);    
         break;
     
     case VK_DELETE:
-        if (IsShiftDown()) delete_selected_cells();
-        else clear_selected_cells();
+        command(IsShiftDown()? CmdDeleteCell: CmdClearCell) ;
         break;
     
     case VK_OEM_1: /* Semicolon */
         if (IsCtrlDown()) {               /* Insert Date/Time */
-            char timestr[32];
-            SYSTEMTIME time;
-            GetLocalTime(&time);
-            if (IsShiftDown())
-                sprintf(timestr, "%04d-%02d-%02d %02d:%02d:%02d",
-                    time.wYear, time.wMonth, time.wDay,
-                    time.wHour, time.wMinute, time.wSecond);
-            else
-                sprintf(timestr, "%04d-%02d-%02d",
-                    time.wYear, time.wMonth, time.wDay);
-            set_cell(&TheTable, CurRow, CurCol, timestr, strlen(timestr));
-            redraw_rows(CurRow, CurRow);
+            command(IsShiftDown()? CmdInsertDateTime: CmdInsertDate);
             break;
         }
         return 0;
 
     case VK_OEM_PERIOD: /* . */
-        if (IsCtrlDown())
-            if (IsShiftDown()) {               /* Insert Cell */
-                insert_cells(&TheTable, CurRow, CurCol, 1);
-                redraw_rows(CurRow, CurRow);
-                return 0;
-            } else {                            /* Insert Row */
-                insert_rows(&TheTable, CurRow, 1);
-                redraw_rows(CurRow, -1);
-                return 0;
-            }
-        break;
+        if (IsCtrlDown()) {
+            command(IsShiftDown()? CmdInsertCell: CmdInsertRow);
+            break;
+        }
+        return 0;
     }
     return 1;
 }
 
 wm_lbuttondown(HWND hwnd, unsigned x, unsigned y) {
-    if (IsShiftDown()) set_anchor(); else clear_anchor();
+    command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
     jump_cursor(y / CellHeight + FirstRow, x / CellWidth + FirstCol);
 }
 
 wm_lbuttondblclk(HWND hwnd, unsigned x, unsigned y) {
-    if (IsShiftDown()) set_anchor(); else clear_anchor();
+    command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
     jump_cursor(y / CellHeight + FirstRow, x / CellWidth + FirstCol);
+    command(CmdEditCell);
     start_edit(1);
 }
 
 wm_dropfiles(HWND hwnd, HDROP drop) {
     DragQueryFile(drop, 0, TheFilename, MAX_PATH);
-    clear_and_open(TheFilename);
+    command(CmdOpenFile);
 }
 
 init_ui_input(HWND hwnd) {
