@@ -1,8 +1,19 @@
+#define MOUSE_SCROLL_STEP_X 75
+#define MOUSE_SCROLL_STEP_Y 25
 
-unsigned    is_resizing_col;
+enum {
+    MOUSE_MODE_NORMAL,
+    MOUSE_MODE_RESIZING,
+    MOUSE_MODE_SCROLLING
+};
+
+unsigned    mouse_mode;
+POINT       mouse_scroll_anchor;
 unsigned    resizing_col;
+
 HCURSOR     cursor_resize_col;
 HCURSOR     cursor_arrow;
+HCURSOR     cursor_scrolling;
 
 OPENFILENAME    open_dlg = {
     sizeof open_dlg, 0, 0,
@@ -212,29 +223,84 @@ wm_keydown(HWND hwnd, unsigned wparam) {
     return 1;
 }
 
+
+void CALLBACK ScrollTimerProc(HWND hwnd, UINT msg, UINT_PTR id, DWORD time) {
+    DWORD pos = GetMessagePos();
+    POINT pt;
+    pt.y = GET_Y_LPARAM(pos);
+    pt.x = GET_X_LPARAM(pos);
+    ScreenToClient(hwnd, &pt);
+    scroll(
+        (pt.y - mouse_scroll_anchor.y) / MOUSE_SCROLL_STEP_Y,
+        (pt.x - mouse_scroll_anchor.x) / MOUSE_SCROLL_STEP_X);
+}
+
+exit_mouse_mode(HWND hwnd) {
+    switch (mouse_mode) {
+    
+    case MOUSE_MODE_SCROLLING:
+        KillTimer(hwnd, 1);
+        ReleaseCapture();
+        break;
+    
+    case MOUSE_MODE_RESIZING:
+        SetCursor(cursor_arrow);
+        ReleaseCapture();
+        break;
+    }
+    mouse_mode = 0;
+}
+
+enter_mouse_mode(HWND hwnd, unsigned mode, unsigned x, unsigned y) {
+    unsigned old_mode = mouse_mode;
+        
+    exit_mouse_mode(hwnd);
+    
+    if (!old_mode)/* Only changed modes if coming from normal */
+        switch (mouse_mode = mode) {
+        
+        case MOUSE_MODE_SCROLLING:
+            mouse_scroll_anchor.x = x;
+            mouse_scroll_anchor.y = y;
+            SetCursor(cursor_scrolling);
+            SetTimer(hwnd, 1, 100, ScrollTimerProc);
+            SetCapture(hwnd);
+            break;
+        
+        case MOUSE_MODE_RESIZING:
+            resizing_col = y;
+            SetCapture(hwnd);
+            break;
+        
+        }
+}
+
+wm_mbuttondown(HWND hwnd, unsigned x, unsigned y) {
+    enter_mouse_mode(hwnd, MOUSE_MODE_SCROLLING, x, y);
+}
+wm_mbuttonup(HWND hwnd, unsigned x, unsigned y) {
+    exit_mouse_mode(hwnd);
+}
+
 wm_lbuttondown(HWND hwnd, unsigned x, unsigned y) {
     unsigned row, col, is_resize;
+    
+    exit_mouse_mode(hwnd);
     get_cell_under(x, y, &row, &col, &is_resize);
-    if (is_resize) {
-        is_resizing_col = 1;
-        resizing_col = col;
-        SetCapture(hwnd);
-    } else {
+    if (is_resize)
+        enter_mouse_mode(hwnd, MOUSE_MODE_RESIZING, 0, col);
+    else {
         command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
         jump_cursor(row, col);
     }
 }
 
 wm_lbuttonup(HWND hwnd, unsigned x, unsigned y) {
-    if (is_resizing_col) {
-        SetCursor(cursor_arrow);
-        ReleaseCapture();
-        is_resizing_col = 0;
-    }
+    exit_mouse_mode(hwnd);
 }
 
 wm_mousemove(HWND hwnd, unsigned x, unsigned y) {
-    if (is_resizing_col) {
+    if (mouse_mode == MOUSE_MODE_RESIZING) {
         resize_column(resizing_col, x - get_cell_x(resizing_col + 1));
         redraw_rows(0, -1);
     } else {
@@ -249,6 +315,9 @@ wm_mousemove(HWND hwnd, unsigned x, unsigned y) {
 
 wm_lbuttondblclk(HWND hwnd, unsigned x, unsigned y) {
     unsigned row, col, is_resize;
+    
+    exit_mouse_mode(hwnd);
+    
     get_cell_under(x, y, &row, &col, &is_resize);
     if (is_resize)
         auto_resize_column(col);
@@ -260,6 +329,11 @@ wm_lbuttondblclk(HWND hwnd, unsigned x, unsigned y) {
     }
 }
 
+wm_mousewheel(HWND hwnd, int delta) {
+    if (!mouse_mode)
+        scroll(delta / -WHEEL_DELTA, 0);
+}
+
 wm_dropfiles(HWND hwnd, HDROP drop) {
     DragQueryFile(drop, 0, TheFilename, MAX_PATH);
     command(CmdOpenFile);
@@ -268,6 +342,7 @@ wm_dropfiles(HWND hwnd, HDROP drop) {
 init_ui_input(HWND hwnd) {
     cursor_resize_col = LoadCursor(0, IDC_SIZEWE);
     cursor_arrow = LoadCursor(0, IDC_ARROW);
+    cursor_scrolling = LoadCursor(0, IDC_SIZEALL);
     open_dlg.hwndOwner = hwnd;
     
     EditBox = CreateWindowEx(0, TEXT("EDIT"), TEXT(""),

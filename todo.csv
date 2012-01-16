@@ -1,6 +1,6 @@
 Priority,Type,Task
 7,Feature,Headers
-5,Feature,Resize Rows
+1,Feature,Resize Rows
 5,Feature,Edit status
 1,Bug,Output crlf/lf as input
 1,Feature,Handle encodings

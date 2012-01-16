@@ -34,7 +34,6 @@ get_cell_under(unsigned x, unsigned y, unsigned *rowp, unsigned *colp, unsigned 
 }
 
 scroll(int row, int col) {
-    unsigned orow = FirstRow, ocol = FirstCol;
     FirstRow = max(0, (int)FirstRow + row);
     FirstCol = max(0, (int)FirstCol + col);
     redraw_rows(0, -1);

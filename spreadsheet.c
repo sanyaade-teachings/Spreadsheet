@@ -61,6 +61,9 @@ WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     case WM_LBUTTONUP: wm_lbuttonup(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
     case WM_MOUSEMOVE: wm_mousemove(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
     case WM_LBUTTONDBLCLK: wm_lbuttondblclk(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
+    case WM_MOUSEWHEEL: wm_mousewheel(hwnd, GET_WHEEL_DELTA_WPARAM(wparam)); return 0;
+    case WM_MBUTTONDOWN: wm_mbuttondown(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
+    case WM_MBUTTONUP: wm_mbuttonup(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
     case WM_ERASEBKGND: return 1;
     case WM_DROPFILES: wm_dropfiles(hwnd, (HDROP)wparam); return 0;
     case WM_CREATE: setup_resources(hwnd); return 0;
