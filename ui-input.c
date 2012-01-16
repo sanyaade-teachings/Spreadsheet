@@ -102,6 +102,7 @@ EditProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_P
 }
 
 wm_char(HWND hwnd, unsigned wparam) {
+
     switch (wparam) {
     
     case 'L' - 'A' + 1:                         /* Delete Row */
@@ -153,7 +154,13 @@ wm_char(HWND hwnd, unsigned wparam) {
 }
 
 wm_keydown(HWND hwnd, unsigned wparam) {
+
     switch (wparam) {
+    
+    case VK_ESCAPE:
+        if (exit_mouse_mode(hwnd))
+            break;
+        break;
     
     case VK_UP:
         if (IsCtrlDown())
@@ -236,6 +243,8 @@ void CALLBACK ScrollTimerProc(HWND hwnd, UINT msg, UINT_PTR id, DWORD time) {
 }
 
 exit_mouse_mode(HWND hwnd) {
+    unsigned old_mode = mouse_mode;
+    
     switch (mouse_mode) {
     
     case MOUSE_MODE_SCROLLING:
@@ -249,14 +258,11 @@ exit_mouse_mode(HWND hwnd) {
         break;
     }
     mouse_mode = 0;
+    return old_mode;
 }
 
 enter_mouse_mode(HWND hwnd, unsigned mode, unsigned x, unsigned y) {
-    unsigned old_mode = mouse_mode;
-        
-    exit_mouse_mode(hwnd);
-    
-    if (!old_mode)/* Only changed modes if coming from normal */
+    if (!exit_mouse_mode(hwnd))/* Only changed modes if coming from normal */
         switch (mouse_mode = mode) {
         
         case MOUSE_MODE_SCROLLING:
