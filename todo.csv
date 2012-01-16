@@ -1,6 +1,5 @@
-Priority,Type,Task
+Priority,Type,Task,
 7,Feature,Headers
-8,Feature,Resize Columns
 5,Feature,Resize Rows
 5,Feature,Edit status
 3,Feature,Fit cell to content
@@ -8,7 +7,6 @@ Priority,Type,Task
 1,Feature,Handle encodings
 5,Feature,Fill Down
 5,Feature,Fill Across
-8,Feature,Select
 1,Feature,HTML Clipboard Format
 4,Feature,Insert Paste
 4,Optimization,Only redraw in the invalid region
@@ -16,3 +14,6 @@ Priority,Type,Task
 9,Administrative,Gather all editing actions into one place
 1,Feature,Warn if closing without saving
 3,Bug,Hitting END on a row with 0 columns does not update the window
+3,Bug,Columns are limited to 65536 by ColXs
+8,Bug,Selection cursor does not show from above the screen
+7,Feature,Scroll w/ Mouse Wheel

@@ -30,3 +30,4 @@ Date,Task
 2012-01-15 00:42:29,Cut & Copy blocks
 2012-01-15 22:21:29,Fixed bug with selection rectangle not updating if started on row 0
 2012-01-15 23:38:48,Cleaned up internals of cell.h
+2012-01-16 04:00:04,"Resizing columns and double-click auto-fit columns w/ min,max"

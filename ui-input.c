@@ -1,3 +1,11 @@
+#define MIN_FIT_WIDTH 20
+#define MAX_FIT_WIDTH 300
+
+unsigned    is_resizing_col;
+unsigned    resizing_col;
+HCURSOR     cursor_resize_col;
+HCURSOR     cursor_arrow;
+
 OPENFILENAME    open_dlg = {
     sizeof open_dlg, 0, 0,
     L"Comma Seperated Values (*.csv)\0*.csv\0"
@@ -8,7 +16,9 @@ OPENFILENAME    open_dlg = {
 #define IsShiftDown() (GetKeyState(VK_SHIFT) < 0)
 #define IsCtrlDown() (GetKeyState(VK_CONTROL) < 0)
 
-is_editing() { return GetWindowStyle(EditBox) & WS_VISIBLE; }
+is_editing() {
+    return GetWindowStyle(EditBox) & WS_VISIBLE;
+}
 
 cancel_edit() {
     SetFocus(TheWindow);
@@ -191,15 +201,58 @@ wm_keydown(HWND hwnd, unsigned wparam) {
 }
 
 wm_lbuttondown(HWND hwnd, unsigned x, unsigned y) {
-    command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-    jump_cursor(y / CellHeight + FirstRow, x / CellWidth + FirstCol);
+    unsigned row, col, is_resize;
+    get_cell_under(x, y, &row, &col, &is_resize);
+    if (is_resize) {
+        is_resizing_col = 1;
+        resizing_col = col;
+        SetCapture(hwnd);
+    } else {
+        command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+        jump_cursor(row, col);
+    }
+}
+
+wm_lbuttonup(HWND hwnd, unsigned x, unsigned y) {
+    if (is_resizing_col) {
+        SetCursor(cursor_arrow);
+        ReleaseCapture();
+        is_resizing_col = 0;
+    }
+}
+
+wm_mousemove(HWND hwnd, unsigned x, unsigned y) {
+    if (is_resizing_col) {
+        unsigned i, dx = x - ColXs[resizing_col + 1];
+        for (i = resizing_col + 1; i < 65536; i++)
+            ColXs[i] += dx;
+        redraw_rows(0, -1);
+    } else {
+        unsigned row, col, is_resize;
+        get_cell_under(x, y, &row, &col, &is_resize);
+        if (is_resize)
+            SetCursor(cursor_resize_col);
+        else if (GetCursor() == cursor_resize_col)
+            SetCursor(cursor_arrow);
+    }
 }
 
 wm_lbuttondblclk(HWND hwnd, unsigned x, unsigned y) {
-    command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-    jump_cursor(y / CellHeight + FirstRow, x / CellWidth + FirstCol);
-    command(CmdEditCell);
-    start_edit(1);
+    unsigned row, col, is_resize;
+    get_cell_under(x, y, &row, &col, &is_resize);
+    if (is_resize) {
+        unsigned i, dx, fit = get_col_max_width(col);
+        fit = clamp(MIN_FIT_WIDTH, fit, MAX_FIT_WIDTH);
+        dx = get_cell_x(col) + fit - get_cell_x(col + 1);
+        for (i = col + 1; i < 65536; i++)
+            ColXs[i] += dx;
+        redraw_rows(0, -1);
+    } else {
+        command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+        jump_cursor(row, col);
+        command(CmdEditCell);
+        start_edit(1);
+    }
 }
 
 wm_dropfiles(HWND hwnd, HDROP drop) {
@@ -208,6 +261,8 @@ wm_dropfiles(HWND hwnd, HDROP drop) {
 }
 
 init_ui_input(HWND hwnd) {
+    cursor_resize_col = LoadCursor(0, IDC_SIZEWE);
+    cursor_arrow = LoadCursor(0, IDC_ARROW);
     open_dlg.hwndOwner = hwnd;
     
     EditBox = CreateWindowEx(0, TEXT("EDIT"), TEXT(""),

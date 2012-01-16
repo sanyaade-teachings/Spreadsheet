@@ -1,7 +1,7 @@
 unsigned    WindowWidth, WindowHeight;
 unsigned    VisibleRows, VisibleCols;
 unsigned    FirstRow, FirstCol;
-unsigned    CellHeight = 24, CellWidth = 80;
+unsigned    CellHeight = 24;
 #define     LastRow (FirstRow + VisibleRows)
 #define     LastCol (FirstCol + VisibleCols)
 
@@ -13,6 +13,25 @@ COLORREF    color_cur_bg = RGB(230, 230, 255);
 HFONT       font_cell;
 
 HDC         WindowBuffer;
+
+unsigned    ColXs[65536];
+
+unsigned get_cell_x(unsigned col) {
+    return ColXs[col];
+}
+unsigned get_cell_y(unsigned row) {
+    return (row - FirstRow) * CellHeight;
+}
+
+/* Returns 1 if near resizing bar */
+get_cell_under(unsigned x, unsigned y, unsigned *rowp, unsigned *colp, unsigned *is_resizep) {
+    unsigned r,c;
+    r = (y / CellHeight) + FirstRow;
+    if (rowp) *rowp = r;
+    for (c = FirstCol; ColXs[c] < x; c++);
+    if (colp) *colp = c - 1;
+    if (is_resizep) *is_resizep = (r == FirstRow && ColXs[c] - x < 8);
+}
 
 scroll(int row, int col) {
     unsigned orow = FirstRow, ocol = FirstCol;
@@ -43,13 +62,18 @@ RECT get_cell_rect(unsigned row, unsigned col) {
     
     if (row < FirstRow || LastRow < row || col < FirstCol || LastCol < col)
         SetRect(&rt, 0, 0, 0, 0);
-    else {
-        row -= FirstRow;
-        col -= FirstCol;
-        SetRect(&rt, col * CellWidth, row * CellHeight,
-            (col + 1) * CellWidth, (row + 1) * CellHeight);
-    }
+    else
+        SetRect(&rt,
+            get_cell_x(col),     get_cell_y(row),
+            get_cell_x(col + 1), get_cell_y(row + 1));
     return rt;
+}
+
+get_col_max_width(unsigned col) {
+    unsigned r, width = 0;
+    for (r = 0; r < row_count(&TheTable); r++)
+        width = max(width, paint_cell(WindowBuffer, &TheTable, r, col, 0));
+    return width + 6;
 }
 
 redraw_rows(unsigned lo, unsigned hi) {
@@ -70,6 +94,17 @@ redraw_rows(unsigned lo, unsigned hi) {
     return 0;
 }
 
+/* Returns width of content if is_drawn is passed; Empty cells return 0 */
+paint_cell(HDC dc, Table *table, unsigned row, unsigned col, unsigned is_drawn) {
+    Cell cell = try_cell(table, row, col);
+    RECT rt = get_cell_rect(row, col);
+    InflateRect(&rt, -3, -3);
+    if (!cell.len) return 0;
+    DrawTextA(dc, cell.str, cell.len, &rt,
+        DT_NOPREFIX | DT_RIGHT | (is_drawn? 0: DT_CALCRECT));
+    return rt.right - rt.left;
+}
+
 paint_table(HDC dc, Table *table) {
     unsigned row, col;
     RECT    rt, rt2;
@@ -88,7 +123,7 @@ paint_table(HDC dc, Table *table) {
     /* Draw Grid */
     SelectObject(dc, GetStockObject(DC_PEN));
     for (col = 0; col <= VisibleCols; col++)
-        DrawLine(dc, col*CellWidth, 0, col*CellWidth, WindowHeight);
+        DrawLine(dc, get_cell_x(col), 0, get_cell_x(col), WindowHeight);
     
     /* Draw Cursor & selection rectangle */
     SetDCBrushColor(dc, color_cur_bg);
@@ -106,14 +141,8 @@ paint_table(HDC dc, Table *table) {
     SetBkMode(dc, TRANSPARENT);
     SelectFont(dc, font_cell);
     for (col = FirstCol; col <= LastCol; col++)
-    for (row = FirstRow; row <= LastRow; row++) {
-        Cell cell = try_cell(table, row, col);
-        RECT rt = get_cell_rect(row, col);
-        InflateRect(&rt, -3, -3);
-        if (cell.len)
-            DrawTextA(dc, cell.str, cell.len, &rt,
-                DT_NOPREFIX | DT_RIGHT);
-    }
+    for (row = FirstRow; row <= LastRow; row++)
+        paint_cell(dc, table, row, col, 1);
 }
 
 wm_size(HWND hwnd, unsigned width, unsigned height) {
@@ -121,14 +150,21 @@ wm_size(HWND hwnd, unsigned width, unsigned height) {
     WindowWidth = width;
     WindowHeight = height;
     VisibleRows = WindowHeight / CellHeight;
-    VisibleCols = WindowWidth / CellWidth;
+    
+    for (VisibleCols = 0; get_cell_x(VisibleCols+1) <= WindowWidth; VisibleCols++);    
+    
     DeleteBitmap(SelectBitmap(WindowBuffer,
         CreateCompatibleBitmap(dc, WindowWidth, WindowHeight)));
     ReleaseDC(hwnd, dc);
 }
 
 init_ui_display(HWND hwnd) {
+    unsigned i;
     HDC dc = GetDC(hwnd);
+    
+    ColXs[0] = 0;
+    for (i = 1; i < sizeof ColXs / sizeof *ColXs; i++)
+        ColXs[i] = ColXs[i - 1] + 80;
     
     SetLayeredWindowAttributes(hwnd, 0, 255, LWA_ALPHA);
     

@@ -54,6 +54,8 @@ WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     case WM_CHAR: if (wm_char(hwnd, wparam)) return 0; break;
     case WM_KEYDOWN: if (wm_keydown(hwnd, wparam)) return 0; break;
     case WM_LBUTTONDOWN: wm_lbuttondown(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
+    case WM_LBUTTONUP: wm_lbuttonup(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
+    case WM_MOUSEMOVE: wm_mousemove(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
     case WM_LBUTTONDBLCLK: wm_lbuttondblclk(hwnd, LOWORD(lparam), HIWORD(lparam)); return 0;
     case WM_ERASEBKGND: return 1;
     case WM_DROPFILES: wm_dropfiles(hwnd, (HDROP)wparam); return 0;

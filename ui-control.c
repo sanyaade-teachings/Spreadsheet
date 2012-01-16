@@ -16,6 +16,10 @@ end_edit() ;
 start_edit(int edit_existing);
 snap_to_cursor();
 
+unsigned clamp(unsigned a, unsigned b, unsigned c) {
+    return min(max(a, b), c);
+}
+
 set_anchor() {                        /* Set Selection Anchor */
     if (!is_selecting) {
         AnchorRow = CurRow;
