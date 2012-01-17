@@ -16,3 +16,4 @@ Priority,Type,Task
 4,Optimization,Push all redrawing out to command()
 7,Feature,Undo / Redo
 3,Optimization,Store the number of ties for max_cols so it doesn't need to be recalculated
+8,Bug,Mouse coordinates can be negative (e.g. mouse move); they must be handled
