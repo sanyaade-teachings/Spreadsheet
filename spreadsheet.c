@@ -18,20 +18,51 @@
 #pragma comment(lib, "comdlg32.lib")
 #pragma comment(lib, "shell32.lib")
 
+#define FIND_TEXT_MAX       8192
+#define MAX_ROWS_FOR_FIT    500
+#define MAX_COLS_FOR_FIT    500
+#define MIN_FIT_WIDTH       20
+#define MAX_FIT_WIDTH       300
+
 #include "fixnum.h"
 #include "cell.h"
 #include "csv.h"
 
-HWND        TheWindow;
-HWND        EditBox;
+typedef struct {
+    Table   *table;
+    HWND    window;
+    HWND    edit;
+    HDC     bitmap;
+    
+    BOOL        is_selecting;
+    
+    unsigned    cur_row, cur_col; 
+    unsigned    anchor_row, anchor_col;
+    
+    /* UI Input Elements */
+    unsigned    mouse_mode;
+    POINT       mouse_scroll_anchor;
+    unsigned    resizing_col;
+    
+    /* UI Display Elements */
+    unsigned    col_pos[65536];
+    unsigned    width, height;
+    unsigned    visible_rows, visible_cols;
+    unsigned    first_row, first_col;
+    
+    char    find_text[FIND_TEXT_MAX];
+    TCHAR   filename[MAX_PATH];
+    OPENFILENAME open_dialog;
+    FINDREPLACEA find_dialog;
+} TableUI;
 
-TCHAR       TheFilename[MAX_PATH];
-char        TheFindText[MAX_PATH];
+ATOM        StructAtom;
+unsigned    WM_FIND;
 
-#define MAX_ROWS_FOR_FIT 500
-#define MAX_COLS_FOR_FIT 500
-#define MIN_FIT_WIDTH 20
-#define MAX_FIT_WIDTH 300
+TableUI*
+get_tui(HWND hwnd) {
+    return (void*) GetProp(hwnd, (LPCTSTR)StructAtom);
+}
 
 #include "ui-control.c"
 #include "action.c"
@@ -39,46 +70,59 @@ char        TheFindText[MAX_PATH];
 #include "ui-input.c"
 
 setup_resources(HWND hwnd) {
-    init_ui_display(hwnd);
-    init_ui_input(hwnd);
+    TableUI *tui = calloc(1, sizeof *tui);
+    tui->table = calloc(1, sizeof *tui->table);
+    tui->window = hwnd;
+    
+    SetProp(hwnd, (LPCTSTR)StructAtom, tui);
+    init_ui_display(tui);
+    init_ui_input(tui);
+}
+
+shutdown_resource(HWND hwnd) {
+    free(get_tui(hwnd)->table);
+    free(get_tui(hwnd));
+    RemoveProp(hwnd, (LPCTSTR)StructAtom);
 }
 
 LRESULT CALLBACK
 WndProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     PAINTSTRUCT ps;
+    TableUI     *tui = get_tui(hwnd);
+    
     switch (msg) {
     case WM_PAINT:
         BeginPaint(hwnd, &ps);
-        paint_table(WindowBuffer, &TheTable);
+        paint_table(tui);
         BitBlt(ps.hdc,
             ps.rcPaint.left,
             ps.rcPaint.top,
             ps.rcPaint.right - ps.rcPaint.left,
             ps.rcPaint.bottom - ps.rcPaint.top,
-            WindowBuffer,
+            tui->bitmap,
             ps.rcPaint.left,
             ps.rcPaint.top,
             SRCCOPY);
         EndPaint(hwnd, &ps);
         return 0;
-    case WM_SIZE: wm_size(hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
+    case WM_SIZE: wm_size(tui, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
     /* Focus returning from another app should continue edit */
-    case WM_SETFOCUS:  if (is_editing()) SetFocus(EditBox); return 0;
-    case WM_CHAR: if (wm_char(hwnd, wparam)) return 0; break;
-    case WM_KEYDOWN: if (wm_keydown(hwnd, wparam)) return 0; break;
-    case WM_LBUTTONDOWN: wm_lbuttondown(hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
-    case WM_LBUTTONUP: wm_lbuttonup(hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
-    case WM_MOUSEMOVE: wm_mousemove(hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
-    case WM_LBUTTONDBLCLK: wm_lbuttondblclk(hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
-    case WM_MOUSEWHEEL: wm_mousewheel(hwnd, GET_WHEEL_DELTA_WPARAM(wparam)); return 0;
-    case WM_MBUTTONDOWN: wm_mbuttondown(hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
-    case WM_MBUTTONUP: wm_mbuttonup(hwnd, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
+    case WM_SETFOCUS:  wm_setfocus(tui); return 0;
+    case WM_CHAR: if (wm_char(tui, wparam)) return 0; else break;
+    case WM_KEYDOWN: if (wm_keydown(tui, wparam)) return 0; else break;
+    case WM_LBUTTONDOWN: wm_lbuttondown(tui, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
+    case WM_LBUTTONUP: wm_lbuttonup(tui, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
+    case WM_MOUSEMOVE: wm_mousemove(tui, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
+    case WM_LBUTTONDBLCLK: wm_lbuttondblclk(tui, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
+    case WM_MOUSEWHEEL: wm_mousewheel(tui, GET_WHEEL_DELTA_WPARAM(wparam)); return 0;
+    case WM_MBUTTONDOWN: wm_mbuttondown(tui, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
+    case WM_MBUTTONUP: wm_mbuttonup(tui, GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)); return 0;
     case WM_ERASEBKGND: return 1;
-    case WM_DROPFILES: wm_dropfiles(hwnd, (HDROP)wparam); return 0;
+    case WM_DROPFILES: wm_dropfiles(tui, (HDROP)wparam); return 0;
     case WM_CREATE: setup_resources(hwnd); return 0;
-    case WM_DESTROY: PostQuitMessage(0); return 0;
+    case WM_DESTROY: shutdown_resource(hwnd); PostQuitMessage(0); return 0;
     }
-    if (msg == WM_FIND) { wm_find(hwnd, (FINDREPLACE*)lparam); return 0; }
+    if (msg == WM_FIND) { wm_find(tui, (FINDREPLACE*)lparam); return 0; }
     return DefWindowProc(hwnd,msg,wparam,lparam);
 }
 
@@ -86,12 +130,17 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
     int         argc;
     TCHAR       **argv = CommandLineToArgvW(GetCommandLineW(), &argc);
     MSG         msg;
+    HWND        hwnd;
     WNDCLASS    wc = { CS_DBLCLKS|CS_HREDRAW|CS_VREDRAW,
         WndProc, 0, 0, 0, LoadIcon(0, IDI_APPLICATION),
         LoadCursor(0, IDC_ARROW), (HBRUSH)(COLOR_WINDOW+1), 0,
         TEXT("Window")};
     RegisterClass(&wc);
-    TheWindow = CreateWindowEx(WS_EX_LAYERED | WS_EX_ACCEPTFILES,
+    
+    StructAtom = AddAtom(L"TableUIStruct");
+    WM_FIND = RegisterWindowMessage(FINDMSGSTRING);
+    
+    hwnd = CreateWindowEx(WS_EX_LAYERED | WS_EX_ACCEPTFILES,
         TEXT("Window"), TEXT(""),
         WS_OVERLAPPEDWINDOW | WS_VISIBLE | WS_VSCROLL | WS_HSCROLL,
         CW_USEDEFAULT,CW_USEDEFAULT,
@@ -100,8 +149,8 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
     
     /* Open command line file */
     if (argv[1]) {
-        wcscpy(TheFilename, argv[1]);
-        command(CmdOpenFile);
+        wcscpy(get_tui(hwnd)->filename, argv[1]);
+        command(get_tui(hwnd), CmdOpenFile);
     }
     
     while (GetMessage(&msg,0,0,0)) {
@@ -112,4 +161,4 @@ int WINAPI WinMain(HINSTANCE inst, HINSTANCE prev, LPSTR cmd, int show) {
     }
     return (int)msg.wParam;
 }
-main() { return WinMain(0,0,0,0); }
+//main() { return WinMain(0,0,0,0); }

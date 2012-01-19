@@ -7,9 +7,6 @@ enum {
     MOUSE_MODE_SCROLLING
 };
 
-unsigned    mouse_mode;
-POINT       mouse_scroll_anchor;
-unsigned    resizing_col;
 
 HCURSOR     cursor_resize_col;
 HCURSOR     cursor_arrow;
@@ -17,221 +14,222 @@ HCURSOR     cursor_scrolling;
 
 HWND        dlg;
 
-unsigned    WM_FIND;
-FINDREPLACEA find_replace_dlg = {
-			sizeof find_replace_dlg, 0, 0,
-			FR_DOWN|FR_DIALOGTERM
-			|FR_HIDEMATCHCASE|FR_HIDEWHOLEWORD,
-			TheFindText, 0,
-            sizeof TheFindText / sizeof *TheFindText, 0, 0, 0, 0 };
+FINDREPLACEA find_dialog_template = {
+	sizeof find_dialog_template, 0, 0,
+	FR_DOWN|FR_DIALOGTERM|FR_HIDEMATCHCASE|FR_HIDEWHOLEWORD,
+	0, 0, FIND_TEXT_MAX, 0, 0, 0, 0 };
 
-OPENFILENAME open_dlg = {
-    sizeof open_dlg, 0, 0,
+OPENFILENAME open_dialog_template = {
+    sizeof open_dialog_template, 0, 0,
     L"All Spreadsheets (*.csv;*.txt)\0*.csv;*.txt\0"
         L"Comma Seperated Values (*.csv)\0*.csv\0"
         L"Text File (*.txt)\0*.txt\0"
         L"All Files (*.*)\0*.*\0",
-    0, 0, 0, TheFilename, MAX_PATH, 0, 0, 0, 0,
+    0, 0, 0, 0, MAX_PATH, 0, 0, 0, 0,
     OFN_FILEMUSTEXIST | OFN_OVERWRITEPROMPT, };
+
+exit_mouse_mode(TableUI *tui);
 
 #define IsShiftDown() (GetKeyState(VK_SHIFT) < 0)
 #define IsCtrlDown() (GetKeyState(VK_CONTROL) < 0)
 
-is_editing() {
-    return GetWindowStyle(EditBox) & WS_VISIBLE;
+is_editing(TableUI *tui) {
+    return GetWindowStyle(tui->edit) & WS_VISIBLE;
 }
 
-cancel_edit() {
-    SetFocus(TheWindow);
-    ShowWindow(EditBox, SW_HIDE);
+cancel_edit(TableUI *tui) {
+    SetFocus(tui->window);
+    ShowWindow(tui->edit, SW_HIDE);
 }
 
-end_edit() {
-    if (is_editing()) {
+end_edit(TableUI *tui) {
+    if (is_editing(tui)) {
         char buf[65536];           /* An EDIT control's limit */
-        int len = GetWindowTextLength(EditBox);
-        GetWindowTextA (EditBox, buf, len + 1);
-        set_cell(&TheTable, CurRow, CurCol, buf, len);
-        cancel_edit();
-        redraw_rows(CurRow, CurRow);
+        int len = GetWindowTextLength(tui->edit);
+        GetWindowTextA (tui->edit, buf, len + 1);
+        set_cell(tui->table, tui->cur_row, tui->cur_col, buf, len);
+        cancel_edit(tui);
+        redraw_rows(tui, tui->cur_row, tui->cur_row);
     }
 }
 
-start_edit(int edit_existing) {
-    RECT rt = get_cell_rect(CurRow, CurCol), rt_cont = rt;    
+start_edit(TableUI *tui, int edit_existing) {
+    RECT rt = get_cell_rect(tui, tui->cur_row, tui->cur_col), rt_cont = rt;    
     
-    if (is_editing()) end_edit();
+    if (is_editing(tui)) end_edit(tui);
     
     if (edit_existing) {
-        Cell cell = try_cell(&TheTable, CurRow, CurCol);
-        SetWindowTextA(EditBox, cell.str);
+        Cell cell = try_cell(tui->table, tui->cur_row, tui->cur_col);
+        SetWindowTextA(tui->edit, cell.str);
         
         /* Resize Edit to fit content; at least as big as the cell */
-        DrawTextA(WindowBuffer, cell.str, cell.len, &rt_cont,
+        DrawTextA(tui->bitmap, cell.str, cell.len, &rt_cont,
             DT_NOPREFIX | DT_RIGHT | DT_CALCRECT | DT_EDITCONTROL);
         UnionRect(&rt, &rt, &rt_cont);
     } else
-        SetWindowText(EditBox, L"");
+        SetWindowText(tui->edit, L"");
     
-    MoveWindow(EditBox, rt.left, rt.top,
+    MoveWindow(tui->edit, rt.left, rt.top,
         rt.right - rt.left, rt.bottom - rt.top, 0);
-    ShowWindow(EditBox, SW_NORMAL);
-    SetFocus(EditBox);
+    ShowWindow(tui->edit, SW_NORMAL);
+    SetFocus(tui->edit);
 }
 
 LRESULT CALLBACK
 EditProc(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam, UINT_PTR id, DWORD_PTR data) {
+    TableUI *tui = (void*)data;
     if (msg == WM_CHAR)
         switch (wparam) {
         case VK_RETURN:
             if (IsCtrlDown()) break;
-            command(CmdCommitEdit);
+            command(tui, CmdReturn);
+            command(tui, CmdCommitEdit);
             return 0;
         case VK_TAB:
             if (IsCtrlDown()) break;
-            command(CmdTab);
-            command(CmdCommitEdit);
+            command(tui, CmdTab);
+            command(tui, CmdCommitEdit);
             return 0;
         case VK_ESCAPE:
-            command(CmdCancelEdit);
+            command(tui, CmdCancelEdit);
             return 0;
         }
     return DefSubclassProc(hwnd, msg, wparam, lparam);
 }
 
-wm_char(HWND hwnd, unsigned wparam) {
+wm_char(TableUI *tui, unsigned wparam) {
 
     switch (wparam) {
     
     case 'F' - 'A' + 1:
         if (!dlg) {
-            find_replace_dlg.hwndOwner = hwnd;
-            dlg = FindTextA(&find_replace_dlg);
+            tui->find_dialog.hwndOwner = tui->window;
+            dlg = FindTextA(&tui->find_dialog);
         }
         break;
     
     case 'L' - 'A' + 1:                         /* Delete Row */
-        if (IsShiftDown()) command(CmdDeleteRow);
-        else command(CmdClearRow);
+        if (IsShiftDown()) command(tui, CmdDeleteRow);
+        else command(tui, CmdClearRow);
         break;
         
     case 'N' - 'A' + 1:                           /* New File */
-        command(CmdClearFile);
+        command(tui, CmdClearFile);
         break;
         
     case 'O' - 'A' + 1:                          /* Open file */
-        if (GetOpenFileName(&open_dlg))        
-            command(CmdOpenFile);
+        if (GetOpenFileName(&tui->open_dialog))        
+            command(tui, CmdOpenFile);
         break;
     
     case 'S' - 'A' + 1:                          /* Save File */
-        if (TheFilename[0] || GetSaveFileName(&open_dlg))
-            command(CmdSaveFile);
+        if (tui->filename[0] || GetSaveFileName(&tui->open_dialog))
+            command(tui, CmdSaveFile);
         break;
     
     case 'C' - 'A' + 1:                               /* Copy */
-        command(CmdCopy);
+        command(tui, CmdCopy);
         break;
     
     case 'X' - 'A' + 1:                                /* Cut */
-        command(IsShiftDown()? CmdCutDelete: CmdCutClear);
+        command(tui, IsShiftDown()? CmdCutDelete: CmdCutClear);
         break;
     
     case 'V' - 'A' + 1:                              /* Paste */
-        command(CmdPaste);
+        command(tui, CmdPaste);
         break;
         
     case VK_RETURN:                                  /* Enter */
-        command(IsShiftDown()? CmdUnReturn: CmdReturn);
+        command(tui, IsShiftDown()? CmdUnReturn: CmdReturn);
         break;
         
     case VK_TAB:                                       /* Tab */
-        command(IsShiftDown()? CmdUnTab: CmdTab);
+        command(tui, IsShiftDown()? CmdUnTab: CmdTab);
         break;
     
     default:                                /* Auto-edit cell */
         /* Don't drop the char; forward it to the editor */
-        command(CmdEditCellClear);
-        SendMessage(EditBox, WM_CHAR, wparam, 0); 
+        command(tui, CmdEditCellClear);
+        SendMessage(tui->edit, WM_CHAR, wparam, 0); 
         break;
     }
     return 1;
 }
 
-wm_keydown(HWND hwnd, unsigned wparam) {
+wm_keydown(TableUI *tui, unsigned wparam) {
 
     switch (wparam) {
     
     case VK_ESCAPE:
-        if (exit_mouse_mode(hwnd))
+        if (exit_mouse_mode(tui))
             break;
         break;
     
     case VK_UP:
         if (IsCtrlDown())
-            command(CmdScrollUp);
+            command(tui, CmdScrollUp);
         else {
-            command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-            command(CmdMoveUp);
+            command(tui, IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+            command(tui, CmdMoveUp);
         }
         break;
     case VK_DOWN:
         if (IsCtrlDown())
-            command(CmdScrollDown);
+            command(tui, CmdScrollDown);
         else  {
-            command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-            command(CmdMoveDown);
+            command(tui, IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+            command(tui, CmdMoveDown);
         }
         break;
     case VK_LEFT:
         if (IsCtrlDown())
-            command(CmdScrollLeft);
+            command(tui, CmdScrollLeft);
         else {
-            command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-            command(CmdMoveLeft);
+            command(tui, IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+            command(tui, CmdMoveLeft);
         }
         break;
     case VK_RIGHT:
         if (IsCtrlDown())
-            command(CmdScrollRight);
+            command(tui, CmdScrollRight);
         else {
-            command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-            command(CmdMoveRight);
+            command(tui, IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+            command(tui, CmdMoveRight);
         }
         break;
     
     case VK_F2:
-        command(CmdEditCell);
+        command(tui, CmdEditCell);
         break;
     
     case VK_F3:
-        command(IsCtrlDown()? CmdFindColumn: CmdFindRow);
+        command(tui, IsCtrlDown()? CmdFindColumn: CmdFindRow);
         break;
     
     case VK_HOME:
-        command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-        command(IsCtrlDown()? CmdHomeCol: CmdHomeRow);    
+        command(tui, IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+        command(tui, IsCtrlDown()? CmdHomeCol: CmdHomeRow);    
         break;
         
     case VK_END:
-        command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-        command(IsCtrlDown()? CmdEndCol: CmdEndRow);    
+        command(tui, IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+        command(tui, IsCtrlDown()? CmdEndCol: CmdEndRow);    
         break;
     
     case VK_DELETE:
-        command(IsShiftDown()? CmdDeleteCell: CmdClearCell) ;
+        command(tui, IsShiftDown()? CmdDeleteCell: CmdClearCell) ;
         break;
     
     case VK_OEM_1: /* Semicolon */
         if (IsCtrlDown()) {               /* Insert Date/Time */
-            command(IsShiftDown()? CmdInsertDateTime: CmdInsertDate);
+            command(tui, IsShiftDown()? CmdInsertDateTime: CmdInsertDate);
             break;
         }
         return 0;
 
     case VK_OEM_PERIOD: /* . */
         if (IsCtrlDown()) {
-            command(IsShiftDown()? CmdInsertCell: CmdInsertRow);
+            command(tui, IsShiftDown()? CmdInsertCell: CmdInsertRow);
             break;
         }
         return 0;
@@ -239,31 +237,36 @@ wm_keydown(HWND hwnd, unsigned wparam) {
     return 1;
 }
 
-wm_find(HWND hwnd, FINDREPLACE *find) {
+wm_setfocus(TableUI *tui) {
+    if (is_editing(tui)) SetFocus(tui->edit);
+}
+
+wm_find(TableUI *tui, FINDREPLACE *find) {
     if (find->Flags & FR_FINDNEXT)
-        command(CmdFindRow);
+        command(tui, CmdFindRow);
     else if (find->Flags & FR_DIALOGTERM)
         dlg = 0;
 }
 
 void CALLBACK ScrollTimerProc(HWND hwnd, UINT msg, UINT_PTR id, DWORD time) {
     DWORD pos = GetMessagePos();
+    TableUI *tui = get_tui(hwnd);
     POINT pt;
     pt.y = GET_Y_LPARAM(pos);
     pt.x = GET_X_LPARAM(pos);
     ScreenToClient(hwnd, &pt);
-    scroll(
-        (pt.y - mouse_scroll_anchor.y) / MOUSE_SCROLL_STEP_Y,
-        (pt.x - mouse_scroll_anchor.x) / MOUSE_SCROLL_STEP_X);
+    scroll(tui,
+        (pt.y - tui->mouse_scroll_anchor.y) / MOUSE_SCROLL_STEP_Y,
+        (pt.x - tui->mouse_scroll_anchor.x) / MOUSE_SCROLL_STEP_X);
 }
 
-exit_mouse_mode(HWND hwnd) {
-    unsigned old_mode = mouse_mode;
+exit_mouse_mode(TableUI *tui) {
+    unsigned old_mode = tui->mouse_mode;
     
-    switch (mouse_mode) {
+    switch (tui->mouse_mode) {
     
     case MOUSE_MODE_SCROLLING:
-        KillTimer(hwnd, 1);
+        KillTimer(tui->window, 1);
         ReleaseCapture();
         break;
     
@@ -272,61 +275,61 @@ exit_mouse_mode(HWND hwnd) {
         ReleaseCapture();
         break;
     }
-    mouse_mode = 0;
+    tui->mouse_mode = 0;
     return old_mode;
 }
 
-enter_mouse_mode(HWND hwnd, unsigned mode, unsigned x, unsigned y) {
-    if (!exit_mouse_mode(hwnd))/* Only changed modes if coming from normal */
-        switch (mouse_mode = mode) {
+enter_mouse_mode(TableUI *tui, unsigned mode, unsigned x, unsigned y) {
+    if (!exit_mouse_mode(tui))/* Only changed modes if coming from normal */
+        switch (tui->mouse_mode = mode) {
         
         case MOUSE_MODE_SCROLLING:
-            mouse_scroll_anchor.x = x;
-            mouse_scroll_anchor.y = y;
+            tui->mouse_scroll_anchor.x = x;
+            tui->mouse_scroll_anchor.y = y;
             SetCursor(cursor_scrolling);
-            SetTimer(hwnd, 1, 100, ScrollTimerProc);
-            SetCapture(hwnd);
+            SetTimer(tui->window, 1, 100, ScrollTimerProc);
+            SetCapture(tui->window);
             break;
         
         case MOUSE_MODE_RESIZING:
-            resizing_col = y;
-            SetCapture(hwnd);
+            tui->resizing_col = y;
+            SetCapture(tui->window);
             break;
         
         }
 }
 
-wm_mbuttondown(HWND hwnd, unsigned x, unsigned y) {
-    enter_mouse_mode(hwnd, MOUSE_MODE_SCROLLING, x, y);
+wm_mbuttondown(TableUI *tui, unsigned x, unsigned y) {
+    enter_mouse_mode(tui, MOUSE_MODE_SCROLLING, x, y);
 }
-wm_mbuttonup(HWND hwnd, unsigned x, unsigned y) {
-    exit_mouse_mode(hwnd);
+wm_mbuttonup(TableUI *tui, unsigned x, unsigned y) {
+    exit_mouse_mode(tui);
 }
 
-wm_lbuttondown(HWND hwnd, unsigned x, unsigned y) {
+wm_lbuttondown(TableUI *tui, unsigned x, unsigned y) {
     unsigned row, col, is_resize;
     
-    exit_mouse_mode(hwnd);
-    get_cell_under(x, y, &row, &col, &is_resize);
+    exit_mouse_mode(tui);
+    get_cell_under(tui, x, y, &row, &col, &is_resize);
     if (is_resize)
-        enter_mouse_mode(hwnd, MOUSE_MODE_RESIZING, 0, col);
+        enter_mouse_mode(tui, MOUSE_MODE_RESIZING, 0, col);
     else {
-        command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-        jump_cursor(row, col);
+        command(tui, IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+        jump_cursor(tui, row, col);
     }
 }
 
-wm_lbuttonup(HWND hwnd, unsigned x, unsigned y) {
-    exit_mouse_mode(hwnd);
+wm_lbuttonup(TableUI *tui, unsigned x, unsigned y) {
+    exit_mouse_mode(tui);
 }
 
-wm_mousemove(HWND hwnd, unsigned x, unsigned y) {
-    if (mouse_mode == MOUSE_MODE_RESIZING) {
-        resize_column(resizing_col, x - get_cell_x(resizing_col + 1));
-        redraw_rows(0, -1);
+wm_mousemove(TableUI *tui, unsigned x, unsigned y) {
+    if (tui->mouse_mode == MOUSE_MODE_RESIZING) {
+        resize_col(tui, tui->resizing_col, x - get_cell_x(tui, tui->resizing_col + 1));
+        redraw_rows(tui, 0, -1);
     } else {
         unsigned row, col, is_resize;
-        get_cell_under(x, y, &row, &col, &is_resize);
+        get_cell_under(tui, x, y, &row, &col, &is_resize);
         if (is_resize)
             SetCursor(cursor_resize_col);
         else if (GetCursor() == cursor_resize_col)
@@ -334,44 +337,48 @@ wm_mousemove(HWND hwnd, unsigned x, unsigned y) {
     }
 }
 
-wm_lbuttondblclk(HWND hwnd, unsigned x, unsigned y) {
+wm_lbuttondblclk(TableUI *tui, unsigned x, unsigned y) {
     unsigned row, col, is_resize;
     
-    exit_mouse_mode(hwnd);
+    exit_mouse_mode(tui);
     
-    get_cell_under(x, y, &row, &col, &is_resize);
+    get_cell_under(tui, x, y, &row, &col, &is_resize);
     if (is_resize)
-        auto_resize_column(col);
+        auto_resize_col(tui, col);
     else {
-        command(IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
-        jump_cursor(row, col);
-        command(CmdEditCell);
-        start_edit(1);
+        command(tui, IsShiftDown()? CmdSetAnchor: CmdClearAnchor);
+        jump_cursor(tui, row, col);
+        command(tui, CmdEditCell);
+        start_edit(tui, 1);
     }
 }
 
-wm_mousewheel(HWND hwnd, int delta) {
-    if (!mouse_mode)
-        scroll(delta / -WHEEL_DELTA, 0);
+wm_mousewheel(TableUI *tui, int delta) {
+    if (tui->mouse_mode == MOUSE_MODE_NORMAL)
+        scroll(tui, delta / -WHEEL_DELTA, 0);
 }
 
-wm_dropfiles(HWND hwnd, HDROP drop) {
-    DragQueryFile(drop, 0, TheFilename, MAX_PATH);
-    command(CmdOpenFile);
+wm_dropfiles(TableUI *tui, HDROP drop) {
+    DragQueryFile(drop, 0, tui->filename, MAX_PATH);
+    command(tui, CmdOpenFile);
 }
 
-init_ui_input(HWND hwnd) {
+init_ui_input(TableUI *tui) {
     cursor_resize_col = LoadCursor(0, IDC_SIZEWE);
     cursor_arrow = LoadCursor(0, IDC_ARROW);
     cursor_scrolling = LoadCursor(0, IDC_SIZEALL);
-    open_dlg.hwndOwner = hwnd;
     
-    WM_FIND = RegisterWindowMessage(FINDMSGSTRING);
+    tui->find_dialog = find_dialog_template;
+    tui->find_dialog.hwndOwner = tui->window;
+    tui->find_dialog.lpstrFindWhat = tui->find_text;
+    tui->open_dialog = open_dialog_template;
+    tui->open_dialog.hwndOwner = tui->window;
+    tui->open_dialog.lpstrFile = tui->filename;
     
-    EditBox = CreateWindowEx(0, TEXT("EDIT"), TEXT(""),
+    tui->edit = CreateWindowEx(0, TEXT("EDIT"), TEXT(""),
         WS_CHILD | ES_AUTOHSCROLL | ES_AUTOVSCROLL
         | ES_MULTILINE | ES_WANTRETURN, 0, 0, 0, 0,
-        hwnd, 0, GetModuleHandle(0), 0);
-    SetWindowFont(EditBox, font_cell, 0);
-    SetWindowSubclass(EditBox, EditProc, 0, 0);
+        tui->window, 0, GetModuleHandle(0), 0);
+    SetWindowFont(tui->edit, font_cell, 0);
+    SetWindowSubclass(tui->edit, EditProc, 0, (DWORD_PTR)tui);
 }

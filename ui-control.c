@@ -1,66 +1,62 @@
-Table       TheTable;
-
-unsigned    CurRow, CurCol;
-unsigned    AnchorRow, AnchorCol;
-#define     SelStartRow min(CurRow, AnchorRow)
-#define     SelStartCol min(CurCol, AnchorCol)
-#define     SelEndRow   (max(CurRow, AnchorRow) + 1)
-#define     SelEndCol   (max(CurCol, AnchorCol) + 1)
+#define     SelStartRow min(tui->cur_row, tui->anchor_row)
+#define     SelStartCol min(tui->cur_col, tui->anchor_col)
+#define     SelEndRow   (max(tui->cur_row, tui->anchor_row) + 1)
+#define     SelEndCol   (max(tui->cur_col, tui->anchor_col) + 1)
 #define     SelRows     (SelEndRow - SelStartRow)
 #define     SelCols     (SelEndCol - SelStartCol)
-BOOL        is_selecting;
 
-is_editing();
-cancel_edit();
-end_edit() ;
-start_edit(int edit_existing);
-snap_to_cursor();
-reset_column_sizes();
+is_editing(TableUI *tui);
+cancel_edit(TableUI *tui);
+end_edit(TableUI *tui) ;
+start_edit(TableUI *tui, int edit_existing);
+snap_to_cursor(TableUI *tui);
+reset_col_sizes(TableUI *tui);
+redraw_rows(TableUI *tui, unsigned lo, unsigned hi);
 
 unsigned clamp(unsigned a, unsigned b, unsigned c) {
     return min(max(a, b), c);
 }
 
-set_anchor() {                        /* Set Selection Anchor */
-    if (!is_selecting) {
-        AnchorRow = CurRow;
-        AnchorCol = CurCol;
-        is_selecting = 1;
+set_anchor(TableUI *tui) {            /* Set Selection Anchor */
+    if (!tui->is_selecting) {
+        tui->anchor_row = tui->cur_row;
+        tui->anchor_col = tui->cur_col;
+        tui->is_selecting = 1;
     }
 }
 
-clear_anchor() {                    /* Clear Selection Anchor */
-    if (is_selecting) {
-        is_selecting = 0;
-        redraw_rows(0, -1);
+clear_anchor(TableUI *tui) {        /* Clear Selection Anchor */
+    if (tui->is_selecting) {
+        tui->is_selecting = 0;
+        redraw_rows(tui, 0, -1);
     }
 }
 
-jump_cursor(unsigned row, unsigned col) {
-    unsigned ocol = CurCol, orow = CurRow;
+jump_cursor(TableUI *tui, unsigned row, unsigned col) {
+    unsigned ocol = tui->cur_col, orow = tui->cur_row;
     
-    end_edit();
-    CurRow = row;
-    CurCol = col;
-    snap_to_cursor();
+    end_edit(tui);
+    tui->cur_row = row;
+    tui->cur_col = col;
+    snap_to_cursor(tui);
     
-    if (is_selecting)
-        if (CurCol != ocol || 1 < abs(orow - CurRow)) {
+    if (tui->is_selecting)
+        if (tui->cur_col != ocol || 1 < abs(orow - tui->cur_row)) {
             /* Moving up or down one only changes one of two rows */
             /* Any left or right move changes the width of every row */
-            redraw_rows(min(orow, SelStartRow), max(orow, SelEndRow+1));
+            redraw_rows(tui, min(orow, SelStartRow), max(orow, SelEndRow+1));
         }
     
     /* Clear old cursor and draw new one */
-    redraw_rows(min(orow, CurRow), max(orow,CurRow));
+    redraw_rows(tui, min(orow, tui->cur_row), max(orow,tui->cur_row));
 }
 
-move_cursor(int row, int col) {
-    jump_cursor(max(0, (int)CurRow + row), max(0, (int)CurCol + col));
+move_cursor(TableUI *tui, int row, int col) {
+    jump_cursor(tui, max(0, (int)tui->cur_row + row), max(0, (int)tui->cur_col + col));
 }
 
-copy_to_clipboard() {
-    if (OpenClipboard(TheWindow)) {
+copy_to_clipboard(TableUI *tui) {
+    if (OpenClipboard(tui->window)) {
         HANDLE  handle;
         char    *name = tempnam("", "csv");
         unsigned len;
@@ -68,12 +64,12 @@ copy_to_clipboard() {
         
         EmptyClipboard();
         
-        if (is_selecting)
-            write_csv_cells(tmpf, &TheTable, SelStartRow, SelEndRow,
+        if (tui->is_selecting)
+            write_csv_cells(tmpf, tui->table, SelStartRow, SelEndRow,
                 SelStartCol, SelEndCol);
         else
-            write_csv_cells(tmpf, &TheTable, CurRow, CurRow + 1,
-                CurCol, CurCol + 1);            
+            write_csv_cells(tmpf, tui->table, tui->cur_row, tui->cur_row + 1,
+                tui->cur_col, tui->cur_col + 1);            
 
         len = ftell(tmpf);
         if ( handle = GlobalAlloc(GMEM_MOVEABLE, len + 1) ) {
@@ -89,65 +85,65 @@ copy_to_clipboard() {
     }
 }
 
-paste_clipboard() {
-    if (OpenClipboard(TheWindow)) {
+paste_clipboard(TableUI *tui) {
+    if (OpenClipboard(tui->window)) {
         HANDLE handle = GetClipboardData(CF_TEXT);
         char *text = GlobalLock(handle);
         unsigned len = GlobalSize(handle);
-        read_csv(&TheTable, CurRow, CurCol, text, text + len);
+        read_csv(tui->table, tui->cur_row, tui->cur_col, text, text + len);
         GlobalUnlock(handle);
         CloseHandle(handle);
         CloseClipboard();
-        snap_to_cursor();
-        redraw_rows(CurRow, -1);
+        snap_to_cursor(tui);
+        redraw_rows(tui, tui->cur_row, -1);
     }
 }
 
-clear_selected_cells() {
+clear_selected_cells(TableUI *tui) {
     unsigned r;
-    if (is_selecting) {
+    if (tui->is_selecting) {
         for (r = SelStartRow; r < SelEndRow; r++)
-            clear_cells(&TheTable, r, SelStartCol, SelCols);
-        redraw_rows(SelStartRow, SelEndRow - 1);
+            clear_cells(tui->table, r, SelStartCol, SelCols);
+        redraw_rows(tui, SelStartRow, SelEndRow - 1);
     } else {
-        clear_cells(&TheTable, CurRow, CurCol, 1);
-        redraw_rows(CurRow, CurRow);
+        clear_cells(tui->table, tui->cur_row, tui->cur_col, 1);
+        redraw_rows(tui, tui->cur_row, tui->cur_row);
     }
 }
 
-delete_selected_cells() {
+delete_selected_cells(TableUI *tui) {
     unsigned r;
-    if (is_selecting) {
+    if (tui->is_selecting) {
         for (r = SelStartRow; r < SelEndRow; r++)
-            delete_cells(&TheTable, r, SelStartCol, SelCols);
-        redraw_rows(SelStartRow, SelEndRow - 1);
+            delete_cells(tui->table, r, SelStartCol, SelCols);
+        redraw_rows(tui, SelStartRow, SelEndRow - 1);
     } else {
-        delete_cells(&TheTable, CurRow, CurCol, 1);
-        redraw_rows(CurRow, CurRow);
+        delete_cells(tui->table, tui->cur_row, tui->cur_col, 1);
+        redraw_rows(tui, tui->cur_row, tui->cur_row);
     }
 }
 
-clear_selected_rows() {
-    if (is_selecting) {
-        clear_rows(&TheTable, SelStartRow, SelRows);
-        redraw_rows(SelStartRow, SelEndRow - 1);
+clear_selected_rows(TableUI *tui) {
+    if (tui->is_selecting) {
+        clear_rows(tui->table, SelStartRow, SelRows);
+        redraw_rows(tui, SelStartRow, SelEndRow - 1);
     } else {
-        clear_rows(&TheTable, CurRow, 1);
-        redraw_rows(CurRow, CurRow);
+        clear_rows(tui->table, tui->cur_row, 1);
+        redraw_rows(tui, tui->cur_row, tui->cur_row);
     }
 }
 
-delete_selected_rows() {
-    if (is_selecting) {
-        delete_rows(&TheTable, SelStartRow, SelRows);
-        redraw_rows(SelStartRow, -1);
+delete_selected_rows(TableUI *tui) {
+    if (tui->is_selecting) {
+        delete_rows(tui->table, SelStartRow, SelRows);
+        redraw_rows(tui, SelStartRow, -1);
     } else {
-        delete_rows(&TheTable, CurRow, 1);
-        redraw_rows(CurRow, -1);
+        delete_rows(tui->table, tui->cur_row, 1);
+        redraw_rows(tui, tui->cur_row, -1);
     }
 }
 
-open_csv(TCHAR *fn) {
+open_csv(TableUI *tui, TCHAR *fn) {
     FILE *f = fn? _wfopen(fn, L"rb"): 0;
     char *data;
     unsigned len;
@@ -160,37 +156,37 @@ open_csv(TCHAR *fn) {
     fread(data = malloc(len), 1, len, f);
     fclose(f);
     
-    read_csv(&TheTable, 0, 0, data, data + len);
+    read_csv(tui->table, 0, 0, data, data + len);
     free(data);
     
-    jump_cursor(0, 0);
-    redraw_rows(0, -1);
+    jump_cursor(tui, 0, 0);
+    redraw_rows(tui, 0, -1);
     return 1;
 }
 
-clear_file() {
-    TheFilename[0] = 0;
-    reset_column_sizes();
-    delete_table(&TheTable);
-    redraw_rows(0, -1);
-    is_selecting = 0;
+clear_file(TableUI *tui) {
+    tui->filename[0] = 0;
+    reset_col_sizes(tui);
+    delete_table(tui->table);
+    redraw_rows(tui, 0, -1);
+    tui->is_selecting = 0;
 }
 
-clear_and_open(TCHAR *fn) {
-    reset_column_sizes();
-    delete_table(&TheTable); /* Do not use clear_file(); it clears the filename */
-    if (!open_csv(TheFilename))
-        MessageBox(TheWindow, L"Could not open the file", L"Error", MB_OK);
-    is_selecting = 0;
-    redraw_rows(0, -1);
+clear_and_open(TableUI *tui, TCHAR *fn) {
+    reset_col_sizes(tui);
+    delete_table(tui->table); /* Do not use clear_file(); it clears the filename */
+    if (!open_csv(tui, tui->filename))
+        MessageBox(tui->window, L"Could not open the file", L"Error", MB_OK);
+    tui->is_selecting = 0;
+    redraw_rows(tui, 0, -1);
 }
 
-save_csv(TCHAR *fn) {
+save_csv(TableUI *tui, TCHAR *fn) {
     FILE *f = _wfopen(fn, L"wb");
     if (f) {
-        write_csv(f, TheTable);
+        write_csv(f, *tui->table);
         fclose(f);
     } else
-        MessageBox(TheWindow, L"Could not save the file", L"Error", MB_OK);
+        MessageBox(tui->window, L"Could not save the file", L"Error", MB_OK);
     return !!f;
 }
